@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0d1117; --s1: #161b22; --s2: #1c2333; --s3: #21262d;
+  --border: rgba(255,255,255,0.08); --text: #e6edf3; --muted: #8b949e;
+  --accent: #1f6feb; --green: #3fb950; --red: #f85149; --yellow: #d29922;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+.fade-in { animation: fadeIn .25s ease both; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  padding:8px 16px; border-radius:8px; font-family:inherit; font-size:13px;
+  font-weight:600; cursor:pointer; border:none; transition:all .15s; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { background:#388bfd; }
+.btn-primary:disabled { opacity:.45; cursor:not-allowed; }
+.btn-danger { background:rgba(248,81,73,0.12); color:var(--red); border:1px solid rgba(248,81,73,0.25); }
+.btn-danger:hover { background:rgba(248,81,73,0.22); }
+.btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
+.btn-ghost:hover { border-color:rgba(255,255,255,0.14); color:var(--text); }
+.card { background:var(--s1); border:1px solid var(--border); border-radius:12px; padding:20px; }
+.input { width:100%; background:var(--s3); border:1px solid var(--border);
+  border-radius:8px; padding:9px 13px; color:var(--text); font-family:inherit;
+  font-size:14px; outline:none; transition:border-color .15s; }
+.input:focus { border-color:var(--accent); }
+.skel { background:var(--s2); border-radius:6px; position:relative; overflow:hidden; }
+@keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
+.skel::after { content:''; position:absolute; inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);
+  animation:shimmer 1.4s infinite; }

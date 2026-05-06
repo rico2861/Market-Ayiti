@@ -1,0 +1,63 @@
+version: '3.9'
+
+services:
+  # ── Backend API ─────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ayiti-backend
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      APP_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-change-this-production-secret-64chars-minimum-ayitimarket}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-this-refresh-secret-64chars-minimum-please}
+      ACCESS_TOKEN_EXPIRE: 2h
+      REFRESH_TOKEN_EXPIRE: 30d
+      DATABASE_PATH: /app/data/ayiti_market.db
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3001
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@ayitimarket.com}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin2024!}
+      RATE_LIMIT_MAX: 500
+    volumes:
+      - backend_data:/app/data
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/api/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Client App ──────────────────────────────────────────────────────
+  client:
+    build:
+      context: ./frontend-client
+      dockerfile: Dockerfile
+    container_name: ayiti-client
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # ── Admin Panel ─────────────────────────────────────────────────────
+  admin:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+    container_name: ayiti-admin
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  backend_data:
+  backend_logs:

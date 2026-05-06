@@ -1,0 +1,13 @@
+{
+  "name": "ayiti-market",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AyitiMarket - Prediction market platform for Haiti",
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:client":  "cd frontend-client && npm run dev",
+    "dev:admin":   "cd frontend-admin && npm run dev",
+    "start": "node backend/src/server.js"
+  },
+  "engines": { "node": ">=18.0.0" }
+}

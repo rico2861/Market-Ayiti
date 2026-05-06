@@ -1,0 +1,162 @@
+// Prisma schema for production PostgreSQL deployment.
+// Dev mode uses sql.js (zero-config). For production:
+//   1. Set DATABASE_URL in .env
+//   2. Run: npx prisma migrate deploy
+//   3. Set USE_PRISMA=true in .env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole       { USER ADMIN }
+enum UserStatus     { ACTIVE SUSPENDED BANNED }
+enum MarketStatus   { DRAFT ACTIVE CLOSED RESOLVED CANCELLED }
+enum MarketCategory { POLITIK SPO EKONOMI KILTI SOSYAL LOT NOUVO }
+enum BetOption      { YES NO }
+enum BetStatus      { ACTIVE WON LOST CANCELLED REFUNDED }
+enum TxType         { DEPOSIT WITHDRAWAL BET WIN REFUND ADJUSTMENT }
+enum TxStatus       { PENDING COMPLETED FAILED CANCELLED }
+enum OrderSide      { BUY SELL }
+enum OrderType      { MARKET LIMIT }
+enum OrderStatus    { OPEN FILLED PARTIALLY_FILLED CANCELLED }
+
+model User {
+  id              String      @id @default(uuid())
+  email           String      @unique
+  username        String      @unique
+  fullName        String?     @map("full_name")
+  phone           String?     @unique
+  hashedPassword  String      @map("hashed_password")
+  role            UserRole    @default(USER)
+  status          UserStatus  @default(ACTIVE)
+  balance         Decimal     @default(0) @db.Decimal(18, 2)
+  isEmailVerified Boolean     @default(false) @map("is_email_verified")
+  lastLogin       DateTime?   @map("last_login")
+  lastIp          String?     @map("last_ip")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  bets            Bet[]
+  transactions    Transaction[]
+  marketsCreated  Market[]    @relation("CreatedBy")
+  marketsResolved Market[]    @relation("ResolvedBy")
+  orders          Order[]
+
+  @@index([email])
+  @@index([username])
+  @@index([phone])
+  @@map("users")
+}
+
+model Market {
+  id               String         @id @default(uuid())
+  slug             String         @unique
+  title            String
+  description      String?
+  category         MarketCategory @default(LOT)
+  status           MarketStatus   @default(ACTIVE)
+  endDate          DateTime       @map("end_date")
+  minBet           Decimal        @default(50) @db.Decimal(18, 2) @map("min_bet")
+  maxBet           Decimal        @default(100000) @db.Decimal(18, 2) @map("max_bet")
+  yesPool          Decimal        @default(0) @db.Decimal(18, 2) @map("yes_pool")
+  noPool           Decimal        @default(0) @db.Decimal(18, 2) @map("no_pool")
+  yesProb          Float          @default(0.5) @map("yes_prob")
+  noProb           Float          @default(0.5) @map("no_prob")
+  totalVolume      Decimal        @default(0) @db.Decimal(18, 2) @map("total_volume")
+  betCount         Int            @default(0) @map("bet_count")
+  resolution       BetOption?
+  resolutionSource String?        @map("resolution_source")
+  imageUrl         String?        @map("image_url")
+  createdById      String         @map("created_by")
+  createdBy        User           @relation("CreatedBy", fields: [createdById], references: [id])
+  resolvedById     String?        @map("resolved_by")
+  resolvedBy       User?          @relation("ResolvedBy", fields: [resolvedById], references: [id])
+  resolvedAt       DateTime?      @map("resolved_at")
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  bets             Bet[]
+  orders           Order[]
+  pricePoints      PricePoint[]
+
+  @@index([status, category])
+  @@index([slug])
+  @@map("markets")
+}
+
+model Bet {
+  id              String     @id @default(uuid())
+  userId          String     @map("user_id")
+  user            User       @relation(fields: [userId], references: [id])
+  marketId        String     @map("market_id")
+  market          Market     @relation(fields: [marketId], references: [id])
+  option          BetOption
+  amount          Decimal    @db.Decimal(18, 2)
+  potentialPayout Decimal    @db.Decimal(18, 2) @map("potential_payout")
+  actualPayout    Decimal?   @db.Decimal(18, 2) @map("actual_payout")
+  oddsAtBet       Float      @map("odds_at_bet")
+  status          BetStatus  @default(ACTIVE)
+  settledAt       DateTime?  @map("settled_at")
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([marketId])
+  @@map("bets")
+}
+
+model Transaction {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  user          User      @relation(fields: [userId], references: [id])
+  type          TxType
+  amount        Decimal   @db.Decimal(18, 2)
+  balanceBefore Decimal   @db.Decimal(18, 2) @map("balance_before")
+  balanceAfter  Decimal   @db.Decimal(18, 2) @map("balance_after")
+  status        TxStatus  @default(COMPLETED)
+  description   String?
+  referenceId   String?   @map("reference_id")
+  paymentMethod String?   @map("payment_method")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("transactions")
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  userId         String      @map("user_id")
+  user           User        @relation(fields: [userId], references: [id])
+  marketId       String      @map("market_id")
+  market         Market      @relation(fields: [marketId], references: [id])
+  side           OrderSide
+  option         BetOption
+  type           OrderType
+  price          Float
+  quantity       Decimal     @db.Decimal(18, 2)
+  filledQuantity Decimal     @default(0) @db.Decimal(18, 2) @map("filled_quantity")
+  status         OrderStatus @default(OPEN)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  filledAt       DateTime?   @map("filled_at")
+
+  @@index([marketId, side, option, status])
+  @@map("orders")
+}
+
+model PricePoint {
+  id        String   @id @default(uuid())
+  marketId  String   @map("market_id")
+  market    Market   @relation(fields: [marketId], references: [id])
+  yesPrice  Float    @map("yes_price")
+  noPrice   Float    @map("no_price")
+  volume    Decimal  @default(0) @db.Decimal(18, 2)
+  timestamp DateTime @default(now())
+
+  @@index([marketId, timestamp])
+  @@map("price_points")
+}
