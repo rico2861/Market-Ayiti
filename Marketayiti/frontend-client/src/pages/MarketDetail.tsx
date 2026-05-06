@@ -57,9 +57,24 @@ function relativeTime(date: Date): string {
   const diff = Math.floor((Date.now() - date.getTime()) / 1000);
   if (diff < 60) return `${diff}s`;
   if (diff < 3600) return `${Math.floor(diff / 60)}min`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-  return `${Math.floor(diff / 86400)}j`;
+  return `${Math.floor(diff / 3600)}h`;
 }
+
+// ─── Données mock pour les paris récents ────────────────────────────────────────
+// (À remplacer par un vrai appel API : marketsAPI.getRecentBets(marketId))
+
+const MOCK_RECENT_BETS: RecentBet[] = [
+  { id: '1', author: 'Jean P.', amount: 500, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 120000) },
+  { id: '2', author: 'Marie C.', amount: 1000, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 300000) },
+  { id: '3', author: 'Pierre L.', amount: 250, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 600000) },
+  { id: '4', author: 'Sophie M.', amount: 2000, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 900000) },
+  { id: '5', author: 'Alex R.', amount: 750, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 1200000) },
+  { id: '6', author: 'Clara D.', amount: 300, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 1500000) },
+  { id: '7', author: 'Marc B.', amount: 1500, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 1800000) },
+  { id: '8', author: 'Nina F.', amount: 500, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 2100000) },
+  { id: '9', author: 'Léo K.', amount: 400, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 2400000) },
+  { id: '10', author: 'Ines T.', amount: 800, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 2700000) },
+];
 
 // ─── Composant : Modal de Confirmation ─────────────────────────────────────────
 
@@ -278,14 +293,9 @@ function OrderBookSummary({
   );
 }
 
-// ─── Composant : Derniers Paris (avec données API réelles) ────────────────────
+// ─── Composant : Derniers Paris ─────────────────────────────────────────────────
 
-interface RecentBetsSectionProps {
-  bets: RecentBet[];
-  loading: boolean;
-}
-
-function RecentBetsSection({ bets, loading }: RecentBetsSectionProps) {
+function RecentBetsSection({ bets }: { bets: RecentBet[] }) {
   const topYes = useMemo(() =>
     bets.filter(b => b.option === 'yes').slice(0, 5),
     [bets]
@@ -304,31 +314,26 @@ function RecentBetsSection({ bets, loading }: RecentBetsSectionProps) {
         {label}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {loading ? (
-          <div style={{ fontSize: 12, color: '#8b949e', textAlign: 'center', padding: '12px 0' }}>
-            Chajman…
-          </div>
-        ) : items.length === 0 ? (
+        {items.length === 0 && (
           <p style={{ fontSize: 12, color: '#8b949e', textAlign: 'center', padding: '12px 0' }}>
             Poko gen pari
           </p>
-        ) : (
-          items.map((bet) => (
-            <div key={bet.id} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: 'rgba(255,255,255,0.03)', borderRadius: 9, padding: '8px 12px',
-              fontSize: 12
-            }}>
-              <span style={{ color: '#c9d1d9', fontWeight: 500 }}>{bet.author}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
-                  {bet.amount.toLocaleString()}
-                </span>
-                <span style={{ color: '#484f58', fontSize: 11 }}>{relativeTime(bet.createdAt)}</span>
-              </div>
-            </div>
-          ))
         )}
+        {items.map((bet) => (
+          <div key={bet.id} style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            background: 'rgba(255,255,255,0.03)', borderRadius: 9, padding: '8px 12px',
+            fontSize: 12
+          }}>
+            <span style={{ color: '#c9d1d9', fontWeight: 500 }}>{bet.author}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}>
+                {bet.amount.toLocaleString()}
+              </span>
+              <span style={{ color: '#484f58', fontSize: 11 }}>{relativeTime(bet.createdAt)}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -350,64 +355,31 @@ function RecentBetsSection({ bets, loading }: RecentBetsSectionProps) {
   );
 }
 
-// ─── Composant : Section Commentaires (avec données API réelles) ──────────────
+// ─── Composant : Section Commentaires ──────────────────────────────────────────
 
-interface CommentsSectionProps {
-  marketId: string;
-  user: any;
-}
-
-function CommentsSection({ marketId, user }: CommentsSectionProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
+function CommentsSection({ marketId, user }: { marketId: string; user: any }) {
+  const [comments, setComments] = useState<Comment[]>([
+    { id: '1', author: 'Jean P.', text: 'Mwen panse Wi ap genyen sa a fasilman!', createdAt: new Date(Date.now() - 3600000) },
+    { id: '2', author: 'Marie C.', text: 'Pa twò sèten... Sitiyasyon an konplike toujou.', createdAt: new Date(Date.now() - 7200000) },
+  ]);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [loadingComments, setLoadingComments] = useState(true);
-
-  // Charger les commentaires réels depuis l'API
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        setLoadingComments(true);
-        // Remplacer par: const res = await marketsAPI.getComments(marketId);
-        // const { data } = res;
-        // setComments(data.map(c => ({ ...c, createdAt: new Date(c.createdAt) })));
-
-        // Pour le dev, utiliser des données mock :
-        const mockComments: Comment[] = [
-          { id: '1', author: 'Jean P.', text: 'Mwen panse Wi ap genyen sa a fasilman!', createdAt: new Date(Date.now() - 3600000) },
-          { id: '2', author: 'Marie C.', text: 'Pa twò sèten... Sitiyasyon an konplike toujou.', createdAt: new Date(Date.now() - 7200000) },
-        ];
-        setComments(mockComments);
-      } catch (err) {
-        console.error('Erè chajman kòmantè:', err);
-      } finally {
-        setLoadingComments(false);
-      }
-    };
-    fetchComments();
-  }, [marketId]);
 
   const handleSubmit = useCallback(async () => {
     if (!newComment.trim() || !user) return;
     setSubmitting(true);
-    try {
-      // Remplacer par: await marketsAPI.postComment(marketId, newComment);
-      await new Promise(r => setTimeout(r, 400));
-
-      const comment: Comment = {
-        id: Date.now().toString(),
-        author: user.username || 'Ou',
-        text: newComment.trim(),
-        createdAt: new Date()
-      };
-      setComments(prev => [comment, ...prev]);
-      setNewComment('');
-      toast.success('Kòmantè ajoute!');
-    } catch (err) {
-      toast.error('Erè tè ap ajoute kòmantè');
-    } finally {
-      setSubmitting(false);
-    }
+    // Simulation d'envoi (remplacer par marketsAPI.postComment(marketId, newComment))
+    await new Promise(r => setTimeout(r, 400));
+    const comment: Comment = {
+      id: Date.now().toString(),
+      author: user.username || 'Ou',
+      text: newComment.trim(),
+      createdAt: new Date()
+    };
+    setComments(prev => [comment, ...prev]);
+    setNewComment('');
+    setSubmitting(false);
+    toast.success('Kòmantè ajoute!');
   }, [newComment, user, marketId]);
 
   return (
@@ -475,30 +447,20 @@ function CommentsSection({ marketId, user }: CommentsSectionProps) {
 
       {/* Liste des commentaires */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {loadingComments ? (
-          <div style={{ fontSize: 12, color: '#8b949e', textAlign: 'center', padding: '20px 0' }}>
-            Chajman kòmantè…
-          </div>
-        ) : comments.length === 0 ? (
-          <div style={{ fontSize: 12, color: '#8b949e', textAlign: 'center', padding: '20px 0' }}>
-            Poko gen kòmantè
-          </div>
-        ) : (
-          comments.map(comment => (
-            <div key={comment.id} style={{
-              background: 'rgba(255,255,255,0.03)', borderRadius: 10,
-              padding: '12px 14px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12 }}>
-                <span style={{ color: '#58a6ff', fontWeight: 600 }}>{comment.author}</span>
-                <span style={{ color: '#484f58' }}>{relativeTime(comment.createdAt)}</span>
-              </div>
-              <p style={{ fontSize: 13, color: '#c9d1d9', margin: 0, lineHeight: 1.5 }}>
-                {comment.text}
-              </p>
+        {comments.map(comment => (
+          <div key={comment.id} style={{
+            background: 'rgba(255,255,255,0.03)', borderRadius: 10,
+            padding: '12px 14px'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12 }}>
+              <span style={{ color: '#58a6ff', fontWeight: 600 }}>{comment.author}</span>
+              <span style={{ color: '#484f58' }}>{relativeTime(comment.createdAt)}</span>
             </div>
-          ))
-        )}
+            <p style={{ fontSize: 13, color: '#c9d1d9', margin: 0, lineHeight: 1.5 }}>
+              {comment.text}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -517,10 +479,6 @@ export default function MarketDetail() {
   // ── Hooks de données ────────────────────────────────────────────────────────
   const { market, loading, error, setMarket } = useMarket(slug || '');
 
-  // ── État pour les données API réelles ───────────────────────────────────────
-  const [recentBets, setRecentBets] = useState<RecentBet[]>([]);
-  const [betsLoading, setBetsLoading] = useState(true);
-
   // ── État local ──────────────────────────────────────────────────────────────
   const [option, setOption] = useState<'yes' | 'no'>(
     () => (searchParams.get('option') === 'no' ? 'no' : 'yes')
@@ -530,39 +488,6 @@ export default function MarketDetail() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
-
-  // ── Chargement des derniers paris depuis l'API ──────────────────────────────
-  useEffect(() => {
-    const fetchRecentBets = async () => {
-      if (!market?.id) return;
-      try {
-        setBetsLoading(true);
-        // Remplacer par: const res = await marketsAPI.getRecentBets(market.id);
-        // const { data } = res;
-        // setRecentBets(data.map(b => ({ ...b, createdAt: new Date(b.createdAt) })));
-
-        // Pour le dev, utiliser des données mock :
-        const mockBets: RecentBet[] = [
-          { id: '1', author: 'Jean P.', amount: 500, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 120000) },
-          { id: '2', author: 'Marie C.', amount: 1000, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 300000) },
-          { id: '3', author: 'Pierre L.', amount: 250, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 600000) },
-          { id: '4', author: 'Sophie M.', amount: 2000, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 900000) },
-          { id: '5', author: 'Alex R.', amount: 750, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 1200000) },
-          { id: '6', author: 'Clara D.', amount: 300, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 1500000) },
-          { id: '7', author: 'Marc B.', amount: 1500, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 1800000) },
-          { id: '8', author: 'Nina F.', amount: 500, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 2100000) },
-          { id: '9', author: 'Léo K.', amount: 400, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 2400000) },
-          { id: '10', author: 'Ines T.', amount: 800, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 2700000) },
-        ];
-        setRecentBets(mockBets);
-      } catch (err) {
-        console.error('Erè chajman dènye paris:', err);
-      } finally {
-        setBetsLoading(false);
-      }
-    };
-    fetchRecentBets();
-  }, [market?.id]);
 
   // ── Mise à jour temps réel ──────────────────────────────────────────────────
   useMarketRealtime(market?.id || '', (data) => {
@@ -596,7 +521,7 @@ export default function MarketDetail() {
   const np = 100 - yp;
   const isClosed = useMemo(() => market ? market.status !== 'active' : true, [market]);
 
-  // Volumes calculés (Wi/Non)
+  // Volumes simulés (Wi/Non) — remplacer par de vraies données API
   const yesVolume = useMemo(
     () => market ? Math.round(market.total_volume * market.yes_prob) : 0,
     [market]
@@ -758,7 +683,7 @@ export default function MarketDetail() {
         </button>
 
         <div className="flex gap-2 flex-wrap">
-          {/* Bouton Favori avec animation */}
+          {/* Bouton Favori */}
           <button
             onClick={toggleFavorite}
             className="heart-btn"
@@ -844,7 +769,7 @@ export default function MarketDetail() {
 
           {/* Stats + Countdown live */}
           <div className="flex flex-wrap gap-x-4 gap-y-3 text-sm text-gray-400 items-center">
-            {/* Countdown live très visible */}
+            {/* Countdown live (remplace l'affichage statique) */}
             <CountdownDisplay endDate={market.end_date} />
 
             <div className="flex items-center gap-2">
@@ -892,161 +817,17 @@ export default function MarketDetail() {
             noOdds={noOdds}
           />
 
-          {/* ════ PANNEAU DE PARI (déplacé avant les paris récents) ═════════ */}
-          <div className="lg:hidden bg-[#161b22] border border-white/10 rounded-3xl p-6">
-            <div className="font-bold text-xl mb-6 text-white">
-              {isClosed ? 'Machè Fèmen' : 'Fè Pari'}
-            </div>
+          {/* Derniers paris */}
+          <RecentBetsSection bets={MOCK_RECENT_BETS} />
 
-            {!isClosed ? (
-              <>
-                {/* Sélection Wi / Non */}
-                <div className="grid grid-cols-2 gap-3 mb-7">
-                  {(['yes', 'no'] as const).map(opt => (
-                    <button
-                      key={opt}
-                      onClick={() => setOption(opt)}
-                      style={{
-                        padding: '14px 8px', borderRadius: 12, cursor: 'pointer',
-                        fontWeight: 700, fontSize: 14,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                        background: option === opt
-                          ? (opt === 'yes' ? 'rgba(63,185,80,0.2)' : 'rgba(248,81,73,0.2)')
-                          : 'rgba(255,255,255,0.04)',
-                        border: `2px solid ${option === opt
-                          ? (opt === 'yes' ? '#3fb950' : '#f85149')
-                          : 'rgba(255,255,255,0.08)'}`,
-                        color: option === opt
-                          ? (opt === 'yes' ? '#3fb950' : '#f85149')
-                          : '#8b949e',
-                        transition: 'all 0.15s'
-                      }}
-                    >
-                      <span style={{ fontSize: 20 }}>{opt === 'yes' ? '✓' : '✗'}</span>
-                      <span>{opt === 'yes' ? 'Wi' : 'Non'}</span>
-                      <span style={{ fontSize: 12, opacity: 0.8 }}>
-                        {opt === 'yes' ? yesOdds.toFixed(2) : noOdds.toFixed(2)}×
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Saisie du montant */}
-                <div className="mb-7">
-                  <label className="block text-xs font-semibold tracking-widest text-gray-400 mb-3">
-                    MONTAN (HTG)
-                  </label>
-                  <input
-                    type="number"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                    placeholder={`Min ${market.min_bet} HTG`}
-                    min={market.min_bet}
-                    step={50}
-                    className="w-full bg-[#0d1117] border border-white/12 rounded-2xl px-5 py-5 text-xl font-mono text-white outline-none focus:border-green-500/40 transition-colors"
-                  />
-
-                  {/* Raccourcis de montant */}
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {[100, 250, 500, 1000, 2500]
-                      .filter(a => a >= (market.min_bet || 50))
-                      .map(a => (
-                        <button
-                          key={a}
-                          onClick={() => setAmount(String(a))}
-                          className={`px-4 py-2 text-sm rounded-xl transition-all border ${amount === String(a)
-                              ? 'bg-green-600 text-white border-green-600'
-                              : 'bg-white/5 border-white/10 hover:bg-white/10 text-gray-400'
-                            }`}
-                        >
-                          {a}
-                        </button>
-                      ))}
-                    {user && (
-                      <button
-                        onClick={() => setAmount(String(Math.floor(user.balance)))}
-                        className="px-4 py-2 text-sm rounded-xl bg-green-500/10 border border-green-500/30 text-green-400"
-                      >
-                        Tout
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Résumé de la mise */}
-                {amtNum > 0 && (
-                  <div className="bg-[#1a2330] border border-white/10 rounded-2xl p-5 mb-7 text-sm">
-                    {[
-                      { l: 'Mise:', v: `${amtNum.toLocaleString()} HTG`, c: 'white' },
-                      { l: 'Gain potansyèl:', v: `${potential.toLocaleString()} HTG`, c: '#3fb950', bold: true },
-                    ].map(({ l, v, c, bold }) => (
-                      <div key={l} className="flex justify-between py-1.5">
-                        <span className="text-gray-400">{l}</span>
-                        <span style={{ color: c, fontWeight: bold ? 700 : 400 }} className="font-mono">
-                          {v}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Bouton principal Parier */}
-                {user ? (
-                  <button
-                    onClick={handleBetClick}
-                    disabled={!amtNum || amtNum < (market.min_bet || 50) || amtNum > user.balance}
-                    className="w-full py-5 rounded-2xl font-bold text-lg disabled:opacity-50 bet-btn"
-                    style={{
-                      background: '#3fb950', color: 'white',
-                      border: 'none', cursor: 'pointer',
-                      boxShadow: '0 4px 20px rgba(63,185,80,0.3)'
-                    }}
-                  >
-                    Pari {option === 'yes' ? 'Wi' : 'Non'} →
-                  </button>
-                ) : (
-                  <Link
-                    to={path('login')}
-                    state={{ from: location.pathname }}
-                    className="block w-full py-5 text-center rounded-2xl font-bold text-lg bet-btn"
-                    style={{
-                      background: '#3fb950', color: 'white',
-                      boxShadow: '0 4px 20px rgba(63,185,80,0.3)'
-                    }}
-                  >
-                    Konekte pou pari
-                  </Link>
-                )}
-
-                {/* Solde utilisateur */}
-                {user && (
-                  <p style={{ textAlign: 'center', fontSize: 12, color: '#484f58', marginTop: 12 }}>
-                    Balans: <span style={{ color: '#8b949e', fontFamily: 'monospace' }}>
-                      {user.balance.toLocaleString()} HTG
-                    </span>
-                  </p>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-12 text-gray-400">
-                {market.status === 'resolved'
-                  ? `✓ Rezoud: ${market.resolution === 'yes' ? 'Wi' : 'Non'}`
-                  : 'Machè sa a fèmen pou pari nouvo'}
-              </div>
-            )}
-          </div>
-
-          {/* Derniers paris avec données API */}
-          <RecentBetsSection bets={recentBets} loading={betsLoading} />
-
-          {/* Commentaires avec données API */}
+          {/* Commentaires */}
           <CommentsSection marketId={market.id} user={user} />
 
         </div>
 
         {/* ════ COLONNE DROITE (sticky) ═════════════════════════════════════ */}
         <div className="lg:col-span-4">
-          <div className="hidden lg:block lg:sticky lg:top-20 bg-[#161b22] border border-white/10 rounded-3xl p-6 md:p-8">
+          <div className="lg:sticky lg:top-20 bg-[#161b22] border border-white/10 rounded-3xl p-6 md:p-8">
 
             <div className="font-bold text-xl mb-6 text-white">
               {isClosed ? 'Machè Fèmen' : 'Fè Pari'}

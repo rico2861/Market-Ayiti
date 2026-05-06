@@ -498,3 +498,194 @@
 {"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.772 ms","timestamp":"2026-05-06 08:38:23"}
 {"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.604 ms","timestamp":"2026-05-06 08:38:23"}
 {"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 08:38:23"}
+{"level":"info","message":"DB loaded: C:\\Users\\rb620099\\Downloads\\github\\Market-Ayiti\\Marketayiti\\backend\\data\\ayiti_market.db","timestamp":"2026-05-06 12:51:39"}
+{"level":"info","message":"Schema initialized","timestamp":"2026-05-06 12:51:39"}
+{"level":"info","message":"Admin password synced: admin@ayitimarket.com","timestamp":"2026-05-06 12:51:40"}
+{"level":"info","message":"AyitiMarket API:  http://localhost:4000","timestamp":"2026-05-06 12:51:40"}
+{"level":"info","message":"WebSocket:        ws://localhost:4000/ws","timestamp":"2026-05-06 12:51:40"}
+{"level":"info","message":"Admin login:      admin@ayitimarket.com / Admin2024!","timestamp":"2026-05-06 12:51:40"}
+{"level":"info","message":"GET /api/v1/auth/me 200 325 - 18.793 ms","timestamp":"2026-05-06 12:52:05"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.946 ms","timestamp":"2026-05-06 12:52:05"}
+{"level":"info","message":"GET /api/v1/markets?status=all&limit=100 200 - - 22.295 ms","timestamp":"2026-05-06 12:52:05"}
+{"level":"info","message":"GET /api/v1/markets?status=all&limit=100 304 - - 17.059 ms","timestamp":"2026-05-06 12:52:05"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:52:17"}
+{"level":"info","message":"GET /api/v1/auth/me 200 325 - 1.883 ms","timestamp":"2026-05-06 12:52:18"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.315 ms","timestamp":"2026-05-06 12:52:18"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:52:18"}
+{"level":"info","message":"GET /api/v1/markets/wyclef-concert-haiti-2025 304 - - 1.220 ms","timestamp":"2026-05-06 12:52:18"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:52:18"}
+{"level":"info","message":"GET /api/v1/markets/wyclef-concert-haiti-2025 304 - - 1.605 ms","timestamp":"2026-05-06 12:52:18"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:52:19"}
+{"level":"info","message":"GET /api/v1/markets/d3a63048-93fb-4d04-b038-8fe197113609/price-history?hours=168 304 - - 1.297 ms","timestamp":"2026-05-06 12:52:19"}
+{"level":"info","message":"GET /api/v1/markets/d3a63048-93fb-4d04-b038-8fe197113609/price-history?hours=168 304 - - 0.981 ms","timestamp":"2026-05-06 12:52:19"}
+{"level":"info","message":"GET /api/v1/admin/users?limit=100 200 779 - 3.366 ms","timestamp":"2026-05-06 12:52:37"}
+{"level":"info","message":"GET /api/v1/admin/users?limit=100 304 - - 4.531 ms","timestamp":"2026-05-06 12:52:37"}
+{"level":"info","message":"PATCH /api/v1/admin/users/f2c0da1c-7f4c-44c6-9789-fee4daf26129 200 144 - 6.194 ms","timestamp":"2026-05-06 12:52:49"}
+{"level":"info","message":"GET /api/v1/admin/users?limit=100 200 782 - 2.277 ms","timestamp":"2026-05-06 12:52:49"}
+{"level":"info","message":"GET /api/v1/auth/me 200 328 - 1.824 ms","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.496 ms","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"GET /api/v1/markets/wyclef-concert-haiti-2025 304 - - 0.585 ms","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"GET /api/v1/markets/wyclef-concert-haiti-2025 304 - - 1.349 ms","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"GET /api/v1/markets/d3a63048-93fb-4d04-b038-8fe197113609/price-history?hours=168 304 - - 1.135 ms","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"GET /api/v1/markets/d3a63048-93fb-4d04-b038-8fe197113609/price-history?hours=168 304 - - 0.891 ms","timestamp":"2026-05-06 12:52:54"}
+{"level":"info","message":"Bet 8428464f-ec0e-4b9a-8ed3-d0da55f4dbf2: admin → yes 100 HTG @ 2.2727","timestamp":"2026-05-06 12:53:05"}
+{"level":"info","message":"POST /api/v1/markets/d3a63048-93fb-4d04-b038-8fe197113609/bet 201 940 - 17.535 ms","timestamp":"2026-05-06 12:53:05"}
+{"level":"info","message":"GET /api/v1/markets/my-bets?limit=100 200 551 - 2.247 ms","timestamp":"2026-05-06 12:53:09"}
+{"level":"info","message":"GET /api/v1/markets/my-bets?limit=100 304 - - 1.639 ms","timestamp":"2026-05-06 12:53:09"}
+{"level":"info","message":"GET /api/v1/markets?status=all&limit=100 200 - - 2.519 ms","timestamp":"2026-05-06 12:53:19"}
+{"level":"info","message":"GET /api/v1/markets?status=all&limit=100 304 - - 3.767 ms","timestamp":"2026-05-06 12:53:19"}
+{"level":"info","message":"Market wyclef-concert-haiti-2025 resolved → no: 1 bets, 0 HTG credited","timestamp":"2026-05-06 12:53:29"}
+{"level":"info","message":"POST /api/v1/admin/markets/d3a63048-93fb-4d04-b038-8fe197113609/resolve 200 107 - 9.801 ms","timestamp":"2026-05-06 12:53:29"}
+{"level":"info","message":"GET /api/v1/markets?status=all&limit=100 200 - - 2.068 ms","timestamp":"2026-05-06 12:53:29"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=100&sort=volume 200 - - 4.811 ms","timestamp":"2026-05-06 12:53:36"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=100&sort=volume 304 - - 2.428 ms","timestamp":"2026-05-06 12:53:36"}
+{"level":"info","message":"GET /api/v1/markets/my-bets?limit=100 200 565 - 1.805 ms","timestamp":"2026-05-06 12:53:37"}
+{"level":"info","message":"GET /api/v1/markets/my-bets?limit=100 304 - - 2.128 ms","timestamp":"2026-05-06 12:53:37"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=100&sort=volume 304 - - 3.551 ms","timestamp":"2026-05-06 12:53:54"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=100&sort=volume 304 - - 4.193 ms","timestamp":"2026-05-06 12:53:54"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:53:56"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 1.379 ms","timestamp":"2026-05-06 12:53:56"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.864 ms","timestamp":"2026-05-06 12:53:56"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:53:56"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:53:56"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.277 ms","timestamp":"2026-05-06 12:53:56"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.097 ms","timestamp":"2026-05-06 12:53:56"}
+{"level":"info","message":"GET /api/v1/auth/me 401 32 - 1.135 ms","timestamp":"2026-05-06 12:55:54"}
+{"level":"info","message":"GET /api/v1/markets/haiti-qualif-coupe-monde-2026 200 782 - 0.572 ms","timestamp":"2026-05-06 12:55:54"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:55:54"}
+{"level":"info","message":"GET /api/v1/markets/4eb100ff-df30-4a58-b4ba-c083a219e16f/price-history?hours=168 200 - - 0.724 ms","timestamp":"2026-05-06 12:55:54"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:55:55"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:59:50"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 3.034 ms","timestamp":"2026-05-06 12:59:50"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.035 ms","timestamp":"2026-05-06 12:59:50"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.856 ms","timestamp":"2026-05-06 12:59:50"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.683 ms","timestamp":"2026-05-06 12:59:54"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:59:54"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.946 ms","timestamp":"2026-05-06 12:59:54"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.615 ms","timestamp":"2026-05-06 12:59:54"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:59:56"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 2.107 ms","timestamp":"2026-05-06 12:59:56"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 3.116 ms","timestamp":"2026-05-06 12:59:56"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.288 ms","timestamp":"2026-05-06 12:59:56"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 12:59:58"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 1.097 ms","timestamp":"2026-05-06 12:59:58"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 2.535 ms","timestamp":"2026-05-06 12:59:58"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.875 ms","timestamp":"2026-05-06 12:59:58"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:00:17"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.875 ms","timestamp":"2026-05-06 13:00:17"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.647 ms","timestamp":"2026-05-06 13:00:17"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.654 ms","timestamp":"2026-05-06 13:00:17"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:00:45"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 3.082 ms","timestamp":"2026-05-06 13:00:45"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.096 ms","timestamp":"2026-05-06 13:00:45"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.766 ms","timestamp":"2026-05-06 13:00:45"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.507 ms","timestamp":"2026-05-06 13:00:59"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:00:59"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.853 ms","timestamp":"2026-05-06 13:00:59"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.660 ms","timestamp":"2026-05-06 13:00:59"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:01:00"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.818 ms","timestamp":"2026-05-06 13:01:00"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.777 ms","timestamp":"2026-05-06 13:01:00"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.839 ms","timestamp":"2026-05-06 13:01:00"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:01:09"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.605 ms","timestamp":"2026-05-06 13:01:09"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.779 ms","timestamp":"2026-05-06 13:01:09"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.721 ms","timestamp":"2026-05-06 13:01:09"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:01:11"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.974 ms","timestamp":"2026-05-06 13:01:11"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.609 ms","timestamp":"2026-05-06 13:01:11"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.570 ms","timestamp":"2026-05-06 13:01:11"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.610 ms","timestamp":"2026-05-06 13:01:15"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:01:15"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 5.878 ms","timestamp":"2026-05-06 13:01:15"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.628 ms","timestamp":"2026-05-06 13:01:15"}
+{"level":"info","message":"GET /api/v1/auth/me 200 327 - 9.982 ms","timestamp":"2026-05-06 13:01:18"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 2.022 ms","timestamp":"2026-05-06 13:01:18"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.757 ms","timestamp":"2026-05-06 13:01:19"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:01:19"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.793 ms","timestamp":"2026-05-06 13:01:19"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:01:19"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:01:19"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.765 ms","timestamp":"2026-05-06 13:01:19"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.003 ms","timestamp":"2026-05-06 13:01:19"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:01"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 1.428 ms","timestamp":"2026-05-06 13:02:01"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.664 ms","timestamp":"2026-05-06 13:02:01"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.726 ms","timestamp":"2026-05-06 13:02:01"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:05"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.514 ms","timestamp":"2026-05-06 13:02:05"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.458 ms","timestamp":"2026-05-06 13:02:05"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.854 ms","timestamp":"2026-05-06 13:02:05"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.436 ms","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.649 ms","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.561 ms","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.456 ms","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.525 ms","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.610 ms","timestamp":"2026-05-06 13:02:08"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 0.726 ms","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 0.712 ms","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.649 ms","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.513 ms","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.994 ms","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.827 ms","timestamp":"2026-05-06 13:02:10"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:29:35"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 52.234 ms","timestamp":"2026-05-06 13:29:44"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.598 ms","timestamp":"2026-05-06 13:29:44"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:29:44"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 50.672 ms","timestamp":"2026-05-06 13:29:45"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:29:45"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 13.098 ms","timestamp":"2026-05-06 13:29:45"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 13:29:45"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 9.540 ms","timestamp":"2026-05-06 13:29:45"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 3.954 ms","timestamp":"2026-05-06 13:29:45"}
+{"level":"info","message":"DB loaded: C:\\Users\\rb620099\\Downloads\\github\\Market-Ayiti\\Marketayiti\\backend\\data\\ayiti_market.db","timestamp":"2026-05-06 15:40:13"}
+{"level":"info","message":"DB loaded: C:\\Users\\rb620099\\Downloads\\github\\Market-Ayiti\\Marketayiti\\backend\\data\\ayiti_market.db","timestamp":"2026-05-06 15:40:13"}
+{"level":"info","message":"DB loaded: C:\\Users\\rb620099\\Downloads\\github\\Market-Ayiti\\Marketayiti\\backend\\data\\ayiti_market.db","timestamp":"2026-05-06 15:40:14"}
+{"level":"info","message":"Schema initialized","timestamp":"2026-05-06 15:40:14"}
+{"level":"info","message":"Admin password synced: admin@ayitimarket.com","timestamp":"2026-05-06 15:40:15"}
+{"level":"info","message":"AyitiMarket API:  http://localhost:4000","timestamp":"2026-05-06 15:40:15"}
+{"level":"info","message":"WebSocket:        ws://localhost:4000/ws","timestamp":"2026-05-06 15:40:15"}
+{"level":"info","message":"Admin login:      admin@ayitimarket.com / Admin2024!","timestamp":"2026-05-06 15:40:15"}
+{"level":"info","message":"GET /api/v1/markets?status=all&limit=100 304 - - 22.854 ms","timestamp":"2026-05-06 15:40:34"}
+{"level":"info","message":"GET /api/v1/markets?status=all&limit=100 304 - - 4.934 ms","timestamp":"2026-05-06 15:40:34"}
+{"level":"info","message":"GET /api/v1/auth/me 401 26 - 2.831 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"GET /api/v1/auth/me 401 26 - 0.560 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 401 26 - 0.346 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 200 - - 4.767 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 401 26 - 0.494 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 2.285 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"POST /api/v1/auth/refresh 200 24 - 6.775 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 200 409 - 1.821 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.363 ms","timestamp":"2026-05-06 15:40:39"}
+{"level":"info","message":"DB loaded: C:\\Users\\rb620099\\Downloads\\github\\Market-Ayiti\\Marketayiti\\backend\\data\\ayiti_market.db","timestamp":"2026-05-06 15:40:40"}
+{"level":"info","message":"Schema initialized","timestamp":"2026-05-06 15:40:40"}
+{"level":"info","message":"Admin password synced: admin@ayitimarket.com","timestamp":"2026-05-06 15:40:41"}
+{"level":"info","message":"AyitiMarket API:  http://localhost:4000","timestamp":"2026-05-06 15:40:41"}
+{"level":"info","message":"WebSocket:        ws://localhost:4000/ws","timestamp":"2026-05-06 15:40:41"}
+{"level":"info","message":"Admin login:      admin@ayitimarket.com / Admin2024!","timestamp":"2026-05-06 15:40:41"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 15:40:42"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=100&sort=volume 304 - - 22.251 ms","timestamp":"2026-05-06 15:40:58"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=100&sort=volume 304 - - 6.796 ms","timestamp":"2026-05-06 15:40:58"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 15:41:09"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 2.822 ms","timestamp":"2026-05-06 15:41:09"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 15:41:09"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 2.724 ms","timestamp":"2026-05-06 15:41:09"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 15:41:09"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 2.771 ms","timestamp":"2026-05-06 15:41:09"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 1.625 ms","timestamp":"2026-05-06 15:41:09"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-06 15:44:10"}
+{"level":"info","message":"GET /api/v1/markets/bitcoin-100k-2025 304 - - 0.833 ms","timestamp":"2026-05-06 15:44:10"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.940 ms","timestamp":"2026-05-06 15:44:10"}
+{"level":"info","message":"GET /api/v1/markets/48b61ba5-409a-4c27-a3be-e5ef0f75414e/price-history?hours=168 304 - - 0.980 ms","timestamp":"2026-05-06 15:44:10"}
