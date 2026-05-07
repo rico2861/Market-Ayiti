@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   TrendingUp, Wallet, Activity,
   ArrowUpRight, ArrowDownRight, Zap,
-  ChevronRight, X,
+  ChevronRight, X, BarChart3,
 } from 'lucide-react';
 import { useMarkets }         from '../hooks/useMarkets';
 import { useWebSocket }       from '../hooks/useRealtime';
@@ -13,84 +13,55 @@ import MarketCard             from '../components/market/MarketCard';
 import { MarketGridSkeleton } from '../components/ui/Skeleton';
 import { walletAPI }          from '../api';
 
-/* ═══════════════════════════════════════════════════════════════
-   VIEWPORT HOOK
-═══════════════════════════════════════════════════════════════ */
-function useViewport() {
-  const [w, setW] = useState(() =>
-    typeof window !== 'undefined' ? window.innerWidth : 1280
-  );
+/* ─── viewport ─────────────────────────────────────────────────────────────── */
+function useVP() {
+  const [w, setW] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1280);
   useEffect(() => {
     const fn = () => setW(window.innerWidth);
     window.addEventListener('resize', fn, { passive: true });
     return () => window.removeEventListener('resize', fn);
   }, []);
-  return {
-    isMobile:  w < 640,
-    isTablet:  w >= 640 && w < 1024,
-    isDesktop: w >= 1024,
-    w,
-  };
+  return { isMobile: w < 640, isTablet: w >= 640 && w < 1024, isDesktop: w >= 1024 };
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════════════════════════ */
-function fmtHTG(v: number | string | null | undefined): string {
+/* ─── helpers ───────────────────────────────────────────────────────────────── */
+function fmtHTG(v: number | string | null | undefined) {
   const n = parseFloat(String(v ?? 0)) || 0;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
   return Math.floor(n).toLocaleString();
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   DRAWER  (mobile sidebar)
-═══════════════════════════════════════════════════════════════ */
-function Drawer({
-  open, onClose, children,
-}: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+/* ─── mobile drawer ─────────────────────────────────────────────────────────── */
+function Drawer({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
   }, [open]);
-
   return (
     <>
-      <div
-        onClick={onClose}
-        style={{
-          position: 'fixed', inset: 0, zIndex: 200,
-          background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)',
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? 'auto' : 'none',
-          transition: 'opacity .25s',
-        }}
-      />
-      <aside
-        style={{
-          position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 201,
-          width: 'min(88vw, 320px)',
-          background: '#0d1117',
-          borderLeft: '1px solid rgba(255,255,255,.07)',
-          transform: open ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'transform .3s cubic-bezier(.4,0,.2,1)',
-          overflowY: 'auto', padding: 20,
-          display: 'flex', flexDirection: 'column', gap: 14,
-          boxSizing: 'border-box',
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            alignSelf: 'flex-end',
-            background: 'rgba(255,255,255,.06)',
-            border: '1px solid rgba(255,255,255,.1)',
-            borderRadius: 8, color: '#8b949e', cursor: 'pointer',
-            padding: '6px 12px',
-            display: 'flex', alignItems: 'center', gap: 6,
-            fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
-          }}
-        >
+      <div onClick={onClose} style={{
+        position: 'fixed', inset: 0, zIndex: 200,
+        background: 'rgba(0,0,0,.7)', backdropFilter: 'blur(6px)',
+        opacity: open ? 1 : 0, pointerEvents: open ? 'auto' : 'none',
+        transition: 'opacity .25s',
+      }} />
+      <aside style={{
+        position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 201,
+        width: 'min(88vw,320px)', background: '#0d1117',
+        borderLeft: '1px solid rgba(255,255,255,.07)',
+        transform: open ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform .3s cubic-bezier(.4,0,.2,1)',
+        overflowY: 'auto', padding: 20,
+        display: 'flex', flexDirection: 'column', gap: 14,
+        boxSizing: 'border-box',
+      }}>
+        <button onClick={onClose} style={{
+          alignSelf: 'flex-end',
+          background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)',
+          borderRadius: 8, color: '#8b949e', cursor: 'pointer', padding: '6px 12px',
+          display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+        }}>
           <X size={13} /> Fèmen
         </button>
         {children}
@@ -99,63 +70,46 @@ function Drawer({
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   SIDEBAR CARD
-═══════════════════════════════════════════════════════════════ */
-function SCard({ children, noPad }: { children: React.ReactNode; noPad?: boolean }) {
+/* ─── sidebar card ───────────────────────────────────────────────────────────── */
+function SCard({ children }: { children: React.ReactNode }) {
   return (
     <div style={{
-      background: '#111820',
-      border: '1px solid rgba(255,255,255,.07)',
-      borderRadius: 14,
-      padding: noPad ? 0 : 20,
-      overflow: 'hidden',
+      background: '#111820', border: '1px solid rgba(255,255,255,.07)',
+      borderRadius: 14, padding: 20,
     }}>
       {children}
     </div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   HERO BANNER
-═══════════════════════════════════════════════════════════════ */
+/* ─── hero banner ────────────────────────────────────────────────────────────── */
 interface BannerProps {
-  to: string;
-  gradient: string;
-  accent: string;
-  emoji: string;
-  eyebrow: string;
-  title: string;
-  desc: string;
-  foot?: React.ReactNode;
-  decor?: string;
-  minH?: number;
+  to: string; gradient: string; accent: string;
+  emoji: string; eyebrow: string; title: string; desc: string;
+  foot?: React.ReactNode; decor?: string; minH?: number;
 }
 function HeroBanner({ to, gradient, accent, emoji, eyebrow, title, desc, foot, decor, minH = 210 }: BannerProps) {
   const [hov, setHov] = useState(false);
   return (
-    <Link
-      to={to}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
+    <Link to={to}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
         textDecoration: 'none', position: 'relative', overflow: 'hidden',
         borderRadius: 16, background: gradient,
         padding: '22px 22px 18px',
         display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
         minHeight: minH,
-        border: `1px solid ${hov ? accent + '44' : accent + '1a'}`,
+        border: `1px solid ${hov ? accent + '44' : accent + '18'}`,
         transform: hov ? 'translateY(-2px)' : 'none',
-        boxShadow: hov ? `0 12px 40px ${accent}14` : 'none',
+        boxShadow: hov ? `0 12px 40px ${accent}18` : 'none',
         transition: 'border .2s, transform .2s, box-shadow .2s',
         cursor: 'pointer', boxSizing: 'border-box',
       }}
     >
       {decor && (
         <div style={{
-          position: 'absolute', bottom: -24, right: -14,
-          fontSize: 100, opacity: .07, lineHeight: 1, pointerEvents: 'none',
-          userSelect: 'none',
+          position: 'absolute', bottom: -20, right: -10,
+          fontSize: 90, opacity: .07, lineHeight: 1, pointerEvents: 'none', userSelect: 'none',
         }}>
           {decor}
         </div>
@@ -163,48 +117,61 @@ function HeroBanner({ to, gradient, accent, emoji, eyebrow, title, desc, foot, d
       <div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <span style={{ fontSize: 20 }}>{emoji}</span>
-          <span style={{
-            fontSize: 10, fontWeight: 700, color: accent,
-            textTransform: 'uppercase', letterSpacing: '.12em',
-          }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: accent, textTransform: 'uppercase', letterSpacing: '.12em' }}>
             {eyebrow}
           </span>
         </div>
-        <h2 style={{
-          fontSize: 22, fontWeight: 800, color: 'white',
-          margin: '0 0 7px', lineHeight: 1.1, letterSpacing: '-.02em',
-        }}>
+        <h2 style={{ fontSize: 21, fontWeight: 800, color: 'white', margin: '0 0 7px', lineHeight: 1.1, letterSpacing: '-.02em' }}>
           {title}
         </h2>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,.55)', margin: 0, lineHeight: 1.6 }}>
-          {desc}
-        </p>
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,.52)', margin: 0, lineHeight: 1.6 }}>{desc}</p>
       </div>
       {foot && <div style={{ marginTop: 16 }}>{foot}</div>}
     </Link>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   HOME PAGE
-═══════════════════════════════════════════════════════════════ */
+/* ─── skeleton card for loading ─────────────────────────────────────────────── */
+function SkeletonCard() {
+  return (
+    <div style={{
+      background: '#111820', border: '1px solid rgba(255,255,255,.06)',
+      borderRadius: 14, padding: 15, display: 'flex', flexDirection: 'column', gap: 12,
+    }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <div style={{ width: 40, height: 40, borderRadius: 9, background: 'rgba(255,255,255,.06)' }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ height: 12, borderRadius: 6, background: 'rgba(255,255,255,.06)', width: '85%' }} />
+          <div style={{ height: 12, borderRadius: 6, background: 'rgba(255,255,255,.04)', width: '60%' }} />
+        </div>
+        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,.06)' }} />
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ flex: 1, height: 38, borderRadius: 9, background: 'rgba(63,185,80,.07)' }} />
+        <div style={{ flex: 1, height: 38, borderRadius: 9, background: 'rgba(248,81,73,.07)' }} />
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   HOME
+═══════════════════════════════════════════════════════════════════════════════ */
 export default function Home() {
-  const { user }             = useAuth();
-  const { locale, path }     = useLocale();
+  const { user }         = useAuth();
+  const { locale, path } = useLocale();
   const { markets, loading, applyMarketUpdate } = useMarkets({ limit: 24 });
-  const [activity, setActivity] = useState<any[]>([]);
+  const [activity, setActivity]   = useState<any[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { isMobile, isTablet, isDesktop, w } = useViewport();
+  const { isMobile, isTablet, isDesktop } = useVP();
 
   useWebSocket({
     onMessage: (msg) => {
       if (msg.type === 'market:update') {
         applyMarketUpdate({
-          id: msg.market_id,
-          yes_prob:     msg.yes_prob,
-          no_prob:      msg.no_prob,
-          total_volume: msg.total_volume,
-          bet_count:    msg.bet_count,
+          id: msg.market_id, yes_prob: msg.yes_prob,
+          no_prob: msg.no_prob, total_volume: msg.total_volume,
+          bet_count: msg.bet_count,
         } as any);
       }
     },
@@ -218,17 +185,14 @@ export default function Home() {
 
   const balance    = parseFloat(String(user?.balance ?? 0)) || 0;
   const balanceUSD = (balance / 132).toFixed(2);
+  const cols       = isDesktop ? 'repeat(2,1fr)' : isMobile ? '1fr' : 'repeat(2,1fr)';
+  const topMkts    = markets.slice(0, 6);
+  const restMkts   = markets.slice(6);
 
-  /* market grid columns */
-  const cols = isDesktop ? 'repeat(2,1fr)' : isMobile ? '1fr' : 'repeat(2,1fr)';
-
-  const topMkts  = markets.slice(0, 6);
-  const restMkts = markets.slice(6);
-
-  /* ─ sidebar ─────────────────────────────────────────────── */
+  /* ── sidebar ── */
   const Sidebar = () => (
     <>
-      {/* Portfolio card */}
+      {/* Portfolio */}
       <SCard>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -249,31 +213,20 @@ export default function Home() {
 
         {user ? (
           <>
-            {/* Balance */}
             <div style={{
-              background: 'rgba(16,185,129,.07)',
-              border: '1px solid rgba(16,185,129,.13)',
+              background: 'rgba(16,185,129,.07)', border: '1px solid rgba(16,185,129,.12)',
               borderRadius: 12, padding: '16px 18px', marginBottom: 14,
             }}>
-              <p style={{
-                fontSize: 10, fontWeight: 700, color: '#4b6376',
-                textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 8px',
-              }}>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#4b6376', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 8px' }}>
                 {locale === 'fr' ? 'Solde disponible' : 'Balans disponib'}
               </p>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-                <span style={{
-                  fontSize: 30, fontWeight: 800, color: '#10b981',
-                  fontFamily: 'JetBrains Mono, monospace', lineHeight: 1,
-                }}>
+                <span style={{ fontSize: 30, fontWeight: 800, color: '#10b981', fontFamily: 'JetBrains Mono,monospace', lineHeight: 1 }}>
                   {fmtHTG(balance)}
                 </span>
                 <span style={{ fontSize: 11, color: '#4b6376', fontWeight: 700 }}>HTG</span>
               </div>
-              <p style={{
-                fontSize: 11, color: 'rgba(52,211,153,.4)',
-                fontFamily: 'JetBrains Mono, monospace', margin: '4px 0 12px',
-              }}>
+              <p style={{ fontSize: 11, color: 'rgba(52,211,153,.38)', fontFamily: 'JetBrains Mono,monospace', margin: '4px 0 12px' }}>
                 ≈ ${balanceUSD} USD
               </p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -284,7 +237,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Actions */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               <Link to={path('deposit')} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
@@ -302,8 +254,7 @@ export default function Home() {
               <Link to={path('withdraw')} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
                 padding: '11px 8px', borderRadius: 10,
-                background: 'rgba(255,255,255,.06)',
-                border: '1px solid rgba(255,255,255,.09)',
+                background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.09)',
                 color: '#94a3b8', fontSize: 12, fontWeight: 700,
                 textDecoration: 'none', transition: 'all .15s',
               }}
@@ -326,8 +277,7 @@ export default function Home() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               padding: '12px', borderRadius: 10,
               background: 'linear-gradient(135deg,#2563eb,#1d4ed8)',
-              color: 'white', fontWeight: 700, fontSize: 13,
-              textDecoration: 'none',
+              color: 'white', fontWeight: 700, fontSize: 13, textDecoration: 'none',
             }}>
               {locale === 'fr' ? "S'inscrire gratuitement" : 'Enskri gratis'} →
             </Link>
@@ -335,7 +285,7 @@ export default function Home() {
         )}
       </SCard>
 
-      {/* Recent Activity */}
+      {/* Recent activity */}
       <SCard>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
           <Activity size={13} color="#10b981" />
@@ -343,15 +293,14 @@ export default function Home() {
             {locale === 'fr' ? 'Activité Récente' : 'Aktivite Resan'}
           </span>
         </div>
-
         {activity.length === 0 ? (
-          <div style={{ padding: '20px 0', textAlign: 'center' }}>
+          <div style={{ padding: '18px 0', textAlign: 'center' }}>
             <p style={{ fontSize: 12, color: '#4b6376', margin: 0 }}>
               {locale === 'fr' ? "Pas encore d'activité" : 'Poko gen aktivite'}
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div>
             {activity.slice(0, 5).map((tx, i) => (
               <div key={tx.id} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -361,11 +310,8 @@ export default function Home() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
                     width: 32, height: 32, borderRadius: 9, flexShrink: 0,
-                    background:
-                      tx.type === 'win'     ? 'rgba(16,185,129,.12)' :
-                      tx.type === 'deposit' ? 'rgba(59,130,246,.12)' :
-                                              'rgba(255,255,255,.05)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+                    background: tx.type === 'win' ? 'rgba(16,185,129,.12)' : tx.type === 'deposit' ? 'rgba(59,130,246,.12)' : 'rgba(255,255,255,.05)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
                   }}>
                     {tx.type === 'bet' ? '🎯' : tx.type === 'deposit' ? '⬇️' : '🏆'}
                   </div>
@@ -374,17 +320,13 @@ export default function Home() {
                       {tx.type === 'bet' ? 'Pari' : tx.type === 'deposit' ? 'Depot' : 'Genyen'}
                     </p>
                     <p style={{ color: '#4b6376', fontSize: 10, margin: '2px 0 0' }}>
-                      {new Date(tx.created_at).toLocaleDateString(
-                        locale === 'fr' ? 'fr-FR' : 'fr-HT',
-                        { day: '2-digit', month: 'short' }
-                      )}
+                      {new Date(tx.created_at).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'fr-HT', { day: '2-digit', month: 'short' })}
                     </p>
                   </div>
                 </div>
                 <span style={{
                   color: tx.type === 'deposit' || tx.type === 'win' ? '#10b981' : '#ef4444',
-                  fontFamily: 'JetBrains Mono, monospace',
-                  fontWeight: 700, fontSize: 12,
+                  fontFamily: 'JetBrains Mono,monospace', fontWeight: 700, fontSize: 12,
                 }}>
                   {tx.type === 'deposit' || tx.type === 'win' ? '+' : '−'}
                   {parseFloat(String(tx.amount ?? 0)).toLocaleString()}
@@ -395,31 +337,58 @@ export default function Home() {
           </div>
         )}
       </SCard>
+
+      {/* Live stats */}
+      <SCard>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+          <BarChart3 size={13} color="#a371f7" />
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>
+            {locale === 'fr' ? 'Statistiques' : 'Estatistik'}
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[
+            { label: locale === 'fr' ? 'Marchés actifs' : 'Machè aktif', value: markets.filter(m => m.status === 'active').length, color: '#3b82f6', mono: false },
+            { label: locale === 'fr' ? 'Volume total'   : 'Volim total',   value: fmtHTG(markets.reduce((a, m) => a + (m.total_volume || 0), 0)) + ' HTG', color: '#10b981', mono: true },
+            { label: locale === 'fr' ? 'Paris placés'   : 'Pari fè',       value: markets.reduce((a, m) => a + (m.bet_count || 0), 0).toLocaleString(), color: '#a371f7', mono: false },
+          ].map(s => (
+            <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#4b6376', fontWeight: 500 }}>{s.label}</span>
+              <span style={{
+                fontSize: 13, fontWeight: 700, color: s.color,
+                fontFamily: s.mono ? 'JetBrains Mono,monospace' : 'inherit',
+              }}>
+                {typeof s.value === 'number' ? s.value.toLocaleString() : s.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </SCard>
     </>
   );
 
-  /* ═══════════════════════════════════════════════════════════
-     RENDER
-  ═══════════════════════════════════════════════════════════ */
+  /* ─────────────────────────────────────────────────────────────────────────── */
   return (
     <>
-      {/* ── Global styles ───────────────────────────────────── */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;700&display=swap');
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'DM Sans', system-ui, sans-serif; }
 
-        @keyframes fadeUp {
+        @keyframes amUp {
           from { opacity: 0; transform: translateY(14px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes livePulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(248,81,73,.5); }
-          50%       { box-shadow: 0 0 0 6px rgba(248,81,73,0); }
+          0%,100% { box-shadow: 0 0 0 0 rgba(248,81,73,.55); }
+          50%      { box-shadow: 0 0 0 6px rgba(248,81,73,0); }
+        }
+        @keyframes shimmer {
+          from { background-position: -400px 0; }
+          to   { background-position: 400px 0; }
         }
 
-        .am-up   { animation: fadeUp .3s ease backwards; }
+        .am-up   { animation: amUp .32s ease backwards; }
         .am-live { animation: livePulse 2s ease-in-out infinite; }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -427,21 +396,22 @@ export default function Home() {
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 99px; }
       `}</style>
 
-      <div style={{ background: '#090d12', minHeight: '100vh', paddingBottom: 60 }}>
-
-        {/* ── Page container ──────────────────────────────────── */}
+      <div style={{
+        background: '#090d12',
+        minHeight: '100vh',
+        paddingBottom: 80,
+        fontFamily: "'DM Sans', system-ui, sans-serif",
+      }}>
         <div style={{
-          maxWidth: 1360,
-          margin: '0 auto',
-          padding: isMobile ? '20px 16px' : isTablet ? '28px 24px' : '36px 40px',
+          maxWidth: 1360, margin: '0 auto',
+          padding: isMobile ? '20px 14px' : isTablet ? '28px 22px' : '36px 40px',
         }}>
 
-          {/* ════════════════════════════════════════════════════
+          {/* ════════════════════════════════════
               HERO BANNERS
-          ════════════════════════════════════════════════════ */}
-          <section style={{ marginBottom: isMobile ? 32 : isTablet ? 40 : 48 }}>
+          ════════════════════════════════════ */}
+          <section style={{ marginBottom: isMobile ? 28 : isTablet ? 36 : 48 }}>
             {isDesktop ? (
-              /* Desktop: 3 columns */
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 16 }}>
                 <HeroBanner
                   to={`${path('markets')}?category=politik`}
@@ -451,11 +421,7 @@ export default function Home() {
                   title={locale === 'fr' ? 'Élections 2026' : 'Eleksyon 2026'}
                   desc={locale === 'fr' ? "Pariez sur l'avenir politique d'Haïti" : 'Pari sou avni politik Ayiti'}
                   decor="📊" minH={230}
-                  foot={
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <ChevronRight size={16} color="rgba(255,255,255,.4)" />
-                    </div>
-                  }
+                  foot={<div style={{ display: 'flex', justifyContent: 'flex-end' }}><ChevronRight size={16} color="rgba(255,255,255,.4)" /></div>}
                 />
                 <HeroBanner
                   to={`${path('markets')}?category=spo`}
@@ -465,11 +431,7 @@ export default function Home() {
                   title={locale === 'fr' ? 'Football' : 'Foutbòl'}
                   desc="Mondyal · MLS · UCL"
                   decor="⚽" minH={230}
-                  foot={
-                    <span style={{ fontSize: 11, color: '#86efac', fontWeight: 700 }}>
-                      12 {locale === 'fr' ? 'marchés actifs' : 'machè aktif'}
-                    </span>
-                  }
+                  foot={<span style={{ fontSize: 11, color: '#86efac', fontWeight: 700 }}>12 {locale === 'fr' ? 'marchés actifs' : 'machè aktif'}</span>}
                 />
                 {!user ? (
                   <HeroBanner
@@ -480,15 +442,7 @@ export default function Home() {
                     title={locale === 'fr' ? 'Commencer' : 'Kòmanse'}
                     desc={locale === 'fr' ? 'Compte en 30 secondes.' : 'Kont an 30 segonn.'}
                     minH={230}
-                    foot={
-                      <span style={{
-                        display: 'inline-block', padding: '8px 20px', borderRadius: 8,
-                        background: 'rgba(255,255,255,.92)', color: '#c2410c',
-                        fontSize: 12, fontWeight: 800,
-                      }}>
-                        {locale === 'fr' ? "S'inscrire" : 'Enskri'} →
-                      </span>
-                    }
+                    foot={<span style={{ display: 'inline-block', padding: '8px 20px', borderRadius: 8, background: 'rgba(255,255,255,.92)', color: '#c2410c', fontSize: 12, fontWeight: 800 }}>{locale === 'fr' ? "S'inscrire" : 'Enskri'} →</span>}
                   />
                 ) : (
                   <HeroBanner
@@ -499,16 +453,11 @@ export default function Home() {
                     title="Bitcoin & HTG"
                     desc={locale === 'fr' ? 'Crypto et finances haïtiennes' : 'Krypto ak finans ayisyen'}
                     decor="₿" minH={230}
-                    foot={
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <ChevronRight size={16} color="rgba(255,255,255,.4)" />
-                      </div>
-                    }
+                    foot={<div style={{ display: 'flex', justifyContent: 'flex-end' }}><ChevronRight size={16} color="rgba(255,255,255,.4)" /></div>}
                   />
                 )}
               </div>
             ) : isTablet ? (
-              /* Tablet: main full-width + 2 side-by-side */
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <HeroBanner
                   to={`${path('markets')}?category=politik`}
@@ -527,8 +476,7 @@ export default function Home() {
                     accent="#22c55e" emoji="⚽"
                     eyebrow={locale === 'fr' ? 'Sport' : 'Spò'}
                     title={locale === 'fr' ? 'Football' : 'Foutbòl'}
-                    desc="Mondyal · MLS"
-                    decor="⚽" minH={170}
+                    desc="Mondyal · MLS" decor="⚽" minH={170}
                     foot={<span style={{ fontSize: 11, color: '#86efac', fontWeight: 700 }}>12 {locale === 'fr' ? 'marchés' : 'machè'}</span>}
                   />
                   {!user ? (
@@ -538,8 +486,7 @@ export default function Home() {
                       accent="#f97316" emoji="🚀"
                       eyebrow={locale === 'fr' ? 'Gratuit' : 'Gratis'}
                       title={locale === 'fr' ? 'Commencer' : 'Kòmanse'}
-                      desc={locale === 'fr' ? 'Compte en 30s.' : 'Kont an 30 segonn.'}
-                      minH={170}
+                      desc={locale === 'fr' ? 'Compte en 30s.' : 'Kont an 30 segonn.'} minH={170}
                       foot={<span style={{ display: 'inline-block', padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,.92)', color: '#c2410c', fontSize: 11, fontWeight: 800 }}>{locale === 'fr' ? "S'inscrire" : 'Enskri'} →</span>}
                     />
                   ) : (
@@ -547,8 +494,7 @@ export default function Home() {
                       to={`${path('markets')}?category=ekonomi`}
                       gradient="linear-gradient(140deg,#1a1000 0%,#0d0900 100%)"
                       accent="#d97706" emoji="💰"
-                      eyebrow="Ekonomi"
-                      title="Bitcoin & HTG"
+                      eyebrow="Ekonomi" title="Bitcoin & HTG"
                       desc={locale === 'fr' ? 'Crypto haïtiennes' : 'Krypto ayisyen'}
                       decor="₿" minH={170}
                       foot={<div style={{ display: 'flex', justifyContent: 'flex-end' }}><ChevronRight size={14} color="rgba(255,255,255,.4)" /></div>}
@@ -557,7 +503,7 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              /* Mobile: all stacked, uniform height */
+              /* Mobile */
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <HeroBanner
                   to={`${path('markets')}?category=politik`}
@@ -565,8 +511,8 @@ export default function Home() {
                   accent="#3b82f6" emoji="🗳️"
                   eyebrow={locale === 'fr' ? 'En vedette' : 'Pwomote'}
                   title={locale === 'fr' ? 'Élections 2026' : 'Eleksyon 2026'}
-                  desc={locale === 'fr' ? "Pariez sur l'avenir politique d'Haïti" : 'Pari sou avni politik Ayiti'}
-                  minH={160}
+                  desc={locale === 'fr' ? "Pariez sur l'avenir d'Haïti" : 'Pari sou avni Ayiti'}
+                  minH={155}
                   foot={<div style={{ display: 'flex', justifyContent: 'flex-end' }}><ChevronRight size={15} color="rgba(255,255,255,.4)" /></div>}
                 />
                 <HeroBanner
@@ -575,8 +521,7 @@ export default function Home() {
                   accent="#22c55e" emoji="⚽"
                   eyebrow={locale === 'fr' ? 'Sport' : 'Spò'}
                   title={locale === 'fr' ? 'Football' : 'Foutbòl'}
-                  desc="Mondyal · MLS · UCL"
-                  minH={150}
+                  desc="Mondyal · MLS · UCL" minH={145}
                   foot={<span style={{ fontSize: 11, color: '#86efac', fontWeight: 700 }}>12 {locale === 'fr' ? 'marchés actifs' : 'machè aktif'}</span>}
                 />
                 {!user ? (
@@ -586,8 +531,7 @@ export default function Home() {
                     accent="#f97316" emoji="🚀"
                     eyebrow={locale === 'fr' ? 'Gratuit' : 'Gratis'}
                     title={locale === 'fr' ? 'Commencer' : 'Kòmanse'}
-                    desc={locale === 'fr' ? 'Compte en 30 secondes.' : 'Kont an 30 segonn.'}
-                    minH={150}
+                    desc={locale === 'fr' ? 'Compte en 30 secondes.' : 'Kont an 30 segonn.'} minH={140}
                     foot={<span style={{ display: 'inline-block', padding: '7px 14px', borderRadius: 8, background: 'rgba(255,255,255,.92)', color: '#c2410c', fontSize: 11, fontWeight: 800 }}>{locale === 'fr' ? "S'inscrire" : 'Enskri'} →</span>}
                   />
                 ) : (
@@ -595,10 +539,9 @@ export default function Home() {
                     to={`${path('markets')}?category=ekonomi`}
                     gradient="linear-gradient(140deg,#1a1000 0%,#0d0900 100%)"
                     accent="#d97706" emoji="💰"
-                    eyebrow="Ekonomi"
-                    title="Bitcoin & HTG"
+                    eyebrow="Ekonomi" title="Bitcoin & HTG"
                     desc={locale === 'fr' ? 'Crypto et finances haïtiennes' : 'Krypto ak finans ayisyen'}
-                    minH={150}
+                    minH={140}
                     foot={<div style={{ display: 'flex', justifyContent: 'flex-end' }}><ChevronRight size={14} color="rgba(255,255,255,.4)" /></div>}
                   />
                 )}
@@ -606,24 +549,22 @@ export default function Home() {
             )}
           </section>
 
-          {/* ════════════════════════════════════════════════════
-              MAIN LAYOUT: markets + sidebar
-          ════════════════════════════════════════════════════ */}
+          {/* ════════════════════════════════════
+              MARKETS + SIDEBAR
+          ════════════════════════════════════ */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: isDesktop ? 'minmax(0,1fr) 296px' : '1fr',
-            columnGap: 48,
-            rowGap: 32,
+            columnGap: 48, rowGap: 32,
             alignItems: 'start',
           }}>
 
-            {/* ── LEFT: Markets ── */}
+            {/* LEFT — markets */}
             <div style={{ minWidth: 0 }}>
 
               {/* Section header */}
               <div style={{
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 marginBottom: isMobile ? 16 : 20,
                 paddingBottom: isMobile ? 14 : 18,
                 borderBottom: '1px solid rgba(255,255,255,.05)',
@@ -633,30 +574,24 @@ export default function Home() {
                     display: 'inline-block', width: 8, height: 8,
                     borderRadius: '50%', background: '#f85149', flexShrink: 0,
                   }} />
-                  <h2 style={{
-                    fontSize: isMobile ? 15 : 17,
-                    fontWeight: 700, color: 'white', letterSpacing: '-.01em',
-                  }}>
+                  <h2 style={{ fontSize: isMobile ? 15 : 17, fontWeight: 700, color: 'white', letterSpacing: '-.01em' }}>
                     {locale === 'fr' ? 'Tous les marchés' : 'Tout machè yo'}
                   </h2>
                   {!loading && markets.length > 0 && (
                     <span style={{
                       fontSize: 11, color: '#4b6376', fontWeight: 600,
-                      background: 'rgba(255,255,255,.05)',
-                      border: '1px solid rgba(255,255,255,.07)',
+                      background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.07)',
                       borderRadius: 99, padding: '2px 8px',
                     }}>
                       {markets.length}
                     </span>
                   )}
                 </div>
-                <Link
-                  to={path('markets')}
-                  style={{
-                    fontSize: 12, color: '#4b6376', textDecoration: 'none',
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    fontWeight: 600, transition: 'color .15s', whiteSpace: 'nowrap',
-                  }}
+                <Link to={path('markets')} style={{
+                  fontSize: 12, color: '#4b6376', textDecoration: 'none',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  fontWeight: 600, transition: 'color .15s', whiteSpace: 'nowrap',
+                }}
                   onMouseEnter={e => (e.currentTarget.style.color = '#94a3b8')}
                   onMouseLeave={e => (e.currentTarget.style.color = '#4b6376')}
                 >
@@ -666,10 +601,13 @@ export default function Home() {
 
               {/* Grid */}
               {loading ? (
-                <MarketGridSkeleton count={6} />
+                /* Skeleton */
+                <div style={{ display: 'grid', gridTemplateColumns: cols, gap: isMobile ? 10 : 14 }}>
+                  {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
+                </div>
               ) : markets.length === 0 ? (
                 <div style={{
-                  textAlign: 'center', padding: '64px 32px',
+                  textAlign: 'center', padding: '72px 32px',
                   background: 'rgba(255,255,255,.02)', borderRadius: 14,
                   border: '1px dashed rgba(255,255,255,.06)',
                 }}>
@@ -682,7 +620,7 @@ export default function Home() {
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: cols, gap: isMobile ? 10 : 14, marginBottom: 32 }}>
                     {topMkts.map((m, i) => (
-                      <div key={m.id} className="am-up" style={{ animationDelay: `${i * 50}ms` }}>
+                      <div key={m.id} className="am-up" style={{ animationDelay: `${i * 45}ms` }}>
                         <MarketCard market={m} index={i} />
                       </div>
                     ))}
@@ -690,21 +628,15 @@ export default function Home() {
 
                   {restMkts.length > 0 && (
                     <>
-                      <div style={{
-                        display: 'flex', alignItems: 'center', gap: 14,
-                        margin: '0 0 20px',
-                      }}>
-                        <span style={{
-                          fontSize: 10, fontWeight: 700, color: '#334155',
-                          textTransform: 'uppercase', letterSpacing: '.12em', whiteSpace: 'nowrap',
-                        }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '0 0 20px' }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: '#2d3748', textTransform: 'uppercase', letterSpacing: '.12em', whiteSpace: 'nowrap' }}>
                           {locale === 'fr' ? 'Plus de marchés' : 'Plis machè'}
                         </span>
                         <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.05)' }} />
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: cols, gap: isMobile ? 10 : 14 }}>
                         {restMkts.map((m, i) => (
-                          <div key={m.id} className="am-up" style={{ animationDelay: `${i * 40}ms` }}>
+                          <div key={m.id} className="am-up" style={{ animationDelay: `${i * 35}ms` }}>
                             <MarketCard market={m} index={i} />
                           </div>
                         ))}
@@ -715,11 +647,10 @@ export default function Home() {
               )}
             </div>
 
-            {/* ── RIGHT: Desktop sidebar ── */}
+            {/* RIGHT — desktop sidebar */}
             {isDesktop && (
               <aside style={{
-                position: 'sticky',
-                top: 'calc(var(--header-h, 64px) + 24px)',
+                position: 'sticky', top: 'calc(var(--header-h, 64px) + 24px)',
                 display: 'flex', flexDirection: 'column', gap: 14,
               }}>
                 <Sidebar />
@@ -728,7 +659,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── Mobile / Tablet drawer ── */}
+        {/* Mobile/Tablet drawer */}
         {!isDesktop && (
           <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
             <Sidebar />
