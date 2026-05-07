@@ -476,26 +476,40 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Right: balance pill (mobile) + drawer button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-              {isMobile && user && (
-                <Link to={path('portfolio')} style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  background: 'rgba(16,185,129,.08)',
-                  border: '1px solid rgba(16,185,129,.18)',
-                  borderRadius: 10, padding: '7px 13px', textDecoration: 'none',
-                }}>
-                  <span style={{
-                    fontSize: 15, fontWeight: 800, color: '#10b981',
-                    fontFamily: 'JetBrains Mono, monospace',
-                  }}>
-                    {fmtHTG(balance)}
-                  </span>
-                  <span style={{ fontSize: 9, color: '#4b6376', fontWeight: 700 }}>HTG</span>
-                </Link>
-              )}
-
-              {!isDesktop && (
+            {/* Right side — single unified action per breakpoint */}
+            <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              {isMobile ? (
+                /* Mobile: ONE button — balance if logged in, wallet icon if not */
+                <button
+                  onClick={() => setDrawerOpen(true)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: user
+                      ? 'rgba(16,185,129,.08)'
+                      : 'rgba(255,255,255,.05)',
+                    border: `1px solid ${user ? 'rgba(16,185,129,.18)' : 'rgba(255,255,255,.09)'}`,
+                    borderRadius: 10,
+                    padding: '8px 14px',
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    transition: 'all .15s',
+                  }}
+                >
+                  {user ? (
+                    <>
+                      <span style={{
+                        fontSize: 14, fontWeight: 800, color: '#10b981',
+                        fontFamily: 'JetBrains Mono, monospace',
+                      }}>
+                        {fmtHTG(balance)}
+                      </span>
+                      <span style={{ fontSize: 9, color: '#4b6376', fontWeight: 700 }}>HTG</span>
+                    </>
+                  ) : (
+                    <Wallet size={15} color="#94a3b8" />
+                  )}
+                </button>
+              ) : isTablet ? (
+                /* Tablet: labelled wallet button */
                 <button
                   onClick={() => setDrawerOpen(true)}
                   style={{
@@ -503,7 +517,7 @@ export default function Home() {
                     background: 'rgba(255,255,255,.05)',
                     border: '1px solid rgba(255,255,255,.09)',
                     borderRadius: 10, color: '#94a3b8', cursor: 'pointer',
-                    padding: isMobile ? '9px 12px' : '9px 16px',
+                    padding: '9px 18px',
                     fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
                     transition: 'all .15s',
                   }}
@@ -511,9 +525,9 @@ export default function Home() {
                   onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = '#94a3b8'; }}
                 >
                   <Wallet size={14} />
-                  {!isMobile && (locale === 'fr' ? 'Portefeuille' : 'Pòtfolyo')}
+                  {locale === 'fr' ? 'Portefeuille' : 'Pòtfolyo'}
                 </button>
-              )}
+              ) : null /* desktop has no button here — sidebar is always visible */}
             </div>
           </div>
 

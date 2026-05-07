@@ -209,7 +209,9 @@ export default memo(function MarketCard({ market, index = 0 }: Props) {
           gap: isMobile ? 5 : 6,
         }}>
           <BetButton
-            label={locale === 'fr' ? 'Acheter Oui' : 'Achte Wi'}
+            label={isMobile
+              ? (locale === 'fr' ? 'Oui' : 'Wi')
+              : (locale === 'fr' ? 'Acheter Oui' : 'Achte Wi')}
             odds={yesOdds}
             intent="yes"
             padding={btnPadding}
@@ -220,7 +222,9 @@ export default memo(function MarketCard({ market, index = 0 }: Props) {
             }}
           />
           <BetButton
-            label={locale === 'fr' ? 'Acheter Non' : 'Achte Non'}
+            label={isMobile
+              ? 'Non'
+              : (locale === 'fr' ? 'Acheter Non' : 'Achte Non')}
             odds={noOdds}
             intent="no"
             padding={btnPadding}
@@ -335,18 +339,27 @@ function BetButton({ label, odds, intent, padding, fontSize, onClick }: BetButto
         justifyContent: 'center',
         gap: 4,
         transition: 'all .15s',
-        whiteSpace: 'nowrap',
-        // Minimum tap target height
         minHeight: 36,
+        overflow: 'hidden',
+        width: '100%',
+        boxSizing: 'border-box',
         WebkitTapHighlightColor: 'transparent',
       }}
     >
-      <Icon size={11} />
-      {label}
+      <Icon size={10} style={{ flexShrink: 0 }} />
+      <span style={{
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        minWidth: 0,
+      }}>
+        {label}
+      </span>
       <span style={{
         fontFamily: 'JetBrains Mono,monospace',
         fontSize: fontSize - 1,
         opacity: 0.85,
+        flexShrink: 0,
       }}>
         {odds.toFixed(2)}×
       </span>
