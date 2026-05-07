@@ -24,7 +24,6 @@ export default function Header() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Read active category directly from URL — single source of truth
   const activeCategory = (searchParams.get('category') || '') as MarketCategory | '';
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -41,7 +40,6 @@ export default function Header() {
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Measure header height
   useEffect(() => {
     if (!headerRef.current) return;
     const ro = new ResizeObserver(([e]) => {
@@ -53,7 +51,6 @@ export default function Header() {
     return () => ro.disconnect();
   }, []);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDropOpen(false);
@@ -77,25 +74,21 @@ export default function Header() {
     return () => document.body.classList.remove('no-scroll');
   }, [mobileOpen]);
 
-  // Sync search box if URL changes externally
   useEffect(() => {
     const q = searchParams.get('q') || '';
     setSearchVal(q);
   }, [searchParams.get('q')]);
 
-  // Search: navigate to markets page and debounce live results
   const handleSearchChange = (val: string) => {
     setSearchVal(val);
     clearTimeout(debounceRef.current);
     if (!val.trim()) {
-      // Clear search from URL
       if (location.pathname.includes('markets')) {
         setSearchParams(prev => { const n = new URLSearchParams(prev); n.delete('q'); return n; }, { replace: true });
       }
       return;
     }
     debounceRef.current = setTimeout(() => {
-      // Navigate to markets page with search query
       const marketsPath = path('markets');
       if (!location.pathname.includes('markets')) {
         navigate(`${marketsPath}?q=${encodeURIComponent(val.trim())}`);
@@ -110,7 +103,6 @@ export default function Header() {
     if (searchVal.trim()) navigate(`${path('markets')}?q=${encodeURIComponent(searchVal.trim())}`);
   };
 
-  // Category click — update URL directly
   const handleCat = (cat: MarketCategory | '') => {
     const marketsPath = path('markets');
     if (!location.pathname.includes('markets') && location.pathname !== path('home')) {
@@ -123,7 +115,6 @@ export default function Header() {
       else n.delete('category');
       return n;
     }, { replace: true });
-    // Also clear search when switching category from home
     if (location.pathname === path('home') && cat) {
       navigate(`${marketsPath}?category=${cat}`);
     }
@@ -142,7 +133,6 @@ export default function Header() {
     { id: 'lot',     label: t('categories.lot') },
   ];
 
-  // Keyboard shortcut for search
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
@@ -153,6 +143,24 @@ export default function Header() {
     document.addEventListener('keydown', h);
     return () => document.removeEventListener('keydown', h);
   }, []);
+
+  /* ── Logo component (reused in topbar + mobile menu) ── */
+  const Logo = () => (
+    <Link to={path('home')} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+      <div style={{
+        width:30, height:30, borderRadius:8,
+        background:'linear-gradient(135deg,#1d4ed8,#2563eb)',
+        display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+        boxShadow:'0 2px 10px rgba(37,99,235,.3)',
+      }}>
+        <TrendingUp size={15} color="white" strokeWidth={2.5}/>
+      </div>
+      {/* ★ Always visible — removed hidden sm:block */}
+      <span style={{ fontWeight:800, color:'white', fontSize:15, letterSpacing:'-.4px', lineHeight:1 }}>
+        Ayiti<span style={{ color:'#388bfd' }}>Market</span>
+      </span>
+    </Link>
+  );
 
   return (
     <>
@@ -172,13 +180,10 @@ export default function Header() {
         <div className="container">
           <div style={{ display:'flex', alignItems:'center', gap:8, height:56 }}>
 
-            {/* Logo */}
-            <Link to={path('home')} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:8, flexShrink:0, marginRight:4 }}>
-              <div style={{ width:30, height:30, borderRadius:8, background:'#1f6feb', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <TrendingUp size={15} color="white" strokeWidth={2.5}/>
-              </div>
-              <span style={{ fontWeight:700, color:'white', fontSize:15, letterSpacing:'-.3px' }} className="hidden sm:block">AyitiMarket</span>
-            </Link>
+            {/* ★ Logo — wordmark always visible on all screen sizes */}
+            <div style={{ marginRight:4 }}>
+              <Logo />
+            </div>
 
             {/* Desktop nav links */}
             <nav className="hidden lg:flex items-center gap-0.5" style={{ marginRight:4 }}>
@@ -196,7 +201,7 @@ export default function Header() {
               ))}
             </nav>
 
-            {/* Search — live results, keyboard shortcut */}
+            {/* Search */}
             <form onSubmit={handleSearchSubmit} style={{ flex:1, maxWidth:460 }} className="hidden md:flex">
               <div style={{ position:'relative', width:'100%' }}>
                 <Search size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#484f58', pointerEvents:'none' }}/>
@@ -252,9 +257,10 @@ export default function Header() {
 
               {user ? (
                 <>
-                  {/* Balance pill */}
+                  {/* Balance pill — hidden on mobile (shown in bottom nav / drawer instead) */}
                   <button onClick={() => setWalletOpen(true)}
-                    style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 10px',
+                    className="hidden sm:flex"
+                    style={{ alignItems:'center', gap:5, padding:'6px 10px',
                       background:'rgba(63,185,80,0.1)', border:'1px solid rgba(63,185,80,0.2)',
                       borderRadius:8, cursor:'pointer', color:'#3fb950', fontSize:12, fontWeight:700,
                       fontFamily:'JetBrains Mono,monospace' }}>
@@ -276,7 +282,7 @@ export default function Header() {
                       <span style={{ fontSize:12, color:'#e6edf3', fontWeight:500 }} className="hidden sm:block">
                         {user.username}
                       </span>
-                      <ChevronDown size={11} color="#8b949e"/>
+                      <ChevronDown size={11} color="#8b949e" className="hidden sm:block"/>
                     </button>
                     {dropOpen && (
                       <div style={{ position:'absolute', right:0, top:'calc(100% + 6px)', background:'#161b22',
@@ -317,7 +323,7 @@ export default function Header() {
                 </>
               ) : (
                 <div style={{ display:'flex', gap:6 }}>
-                  <Link to={path('login')} className="btn-ghost" style={{ padding:'6px 12px', fontSize:12 }}>
+                  <Link to={path('login')} className="btn-ghost hidden sm:flex" style={{ padding:'6px 12px', fontSize:12 }}>
                     {t('nav.login')}
                   </Link>
                   <Link to={path('register')} className="btn-yellow" style={{ padding:'6px 12px', fontSize:12 }}>
@@ -336,7 +342,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Category bar — synced with URL */}
+        {/* Category bar */}
         {onMarketsOrHome && (
           <div style={{ borderTop:'1px solid rgba(255,255,255,0.05)' }}>
             <div className="container">
@@ -366,18 +372,17 @@ export default function Header() {
       {/* Spacer */}
       <div style={{ height: headerHeight + (onMarketsOrHome ? 10 : 0), flexShrink:0 }}/>
 
-      {/* Mobile menu */}
+      {/* Mobile menu drawer */}
       <div className={clsx('mobile-menu lg:hidden', mobileOpen && 'open')}>
         <div style={{ padding:16 }}>
+          {/* ★ Header row: logo + close */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-            <Link to={path('home')} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:8 }}>
-              <div style={{ width:28, height:28, borderRadius:7, background:'#1f6feb', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <TrendingUp size={14} color="white"/>
-              </div>
-              <span style={{ fontWeight:700, color:'white', fontSize:15 }}>AyitiMarket</span>
-            </Link>
-            <button onClick={() => setMobileOpen(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'#8b949e' }}>
-              <X size={20}/>
+            <Logo />
+            <button onClick={() => setMobileOpen(false)}
+              style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.09)',
+                borderRadius:8, cursor:'pointer', color:'#8b949e', padding:'6px 10px',
+                display:'flex', alignItems:'center' }}>
+              <X size={18}/>
             </button>
           </div>
 
@@ -390,7 +395,7 @@ export default function Header() {
             </div>
           </form>
 
-          {/* Mobile nav */}
+          {/* Mobile nav links */}
           <nav style={{ marginBottom:16 }}>
             {[
               { to:path('home'),      label:t('nav.home'),      icon:<Home size={15}/> },
@@ -434,24 +439,28 @@ export default function Header() {
                 background:'#161b22', borderRadius:12, marginBottom:10,
                 border:'1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ width:38, height:38, borderRadius:'50%', background:'#1f6feb',
-                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, color:'white', flexShrink:0 }}>
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:16, fontWeight:700, color:'white', flexShrink:0 }}>
                   {user.username[0].toUpperCase()}
                 </div>
-                <div style={{ flex:1 }}>
+                <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ fontSize:14, fontWeight:700, color:'white' }}>@{user.username}</div>
-                  <div style={{ fontSize:12, color:'#3fb950', fontFamily:'JetBrains Mono,monospace' }}>
-                    {user.balance.toLocaleString()} HTG
+                  <div style={{ fontSize:13, color:'#3fb950', fontFamily:'JetBrains Mono,monospace', marginTop:1 }}>
+                    {Math.floor(user.balance).toLocaleString()} HTG
                   </div>
                 </div>
                 <button onClick={() => { setMobileOpen(false); setWalletOpen(true); }}
-                  style={{ padding:'6px 12px', background:'rgba(63,185,80,0.1)', border:'1px solid rgba(63,185,80,0.3)',
-                    borderRadius:8, color:'#3fb950', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                  style={{ padding:'7px 14px', background:'rgba(63,185,80,0.1)',
+                    border:'1px solid rgba(63,185,80,0.3)', borderRadius:8,
+                    color:'#3fb950', fontSize:12, fontWeight:700, cursor:'pointer',
+                    fontFamily:'inherit', flexShrink:0 }}>
                   + Depoze
                 </button>
               </div>
               <button onClick={() => { setMobileOpen(false); logout(); navigate(path('home')); }}
                 style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'9px 12px',
-                  background:'none', border:'none', cursor:'pointer', color:'#f85149', fontSize:13, fontFamily:'inherit', borderRadius:8 }}>
+                  background:'none', border:'none', cursor:'pointer',
+                  color:'#f85149', fontSize:13, fontFamily:'inherit', borderRadius:8 }}>
                 <LogOut size={14}/> {locale==='fr'?'Déconnexion':'Dekonekte'}
               </button>
             </div>

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  TrendingUp, Activity,
+  TrendingUp, Wallet, Activity,
   ArrowUpRight, ArrowDownRight, Zap,
-  ChevronRight, X, Wallet,
+  ChevronRight, X,
 } from 'lucide-react';
 import { useMarkets }         from '../hooks/useMarkets';
 import { useWebSocket }       from '../hooks/useRealtime';
