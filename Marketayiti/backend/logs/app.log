@@ -2620,3 +2620,61 @@
 {"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 2.345 ms","timestamp":"2026-05-07 15:33:26"}
 {"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 2.291 ms","timestamp":"2026-05-07 15:33:26"}
 {"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:33:26"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.389 ms","timestamp":"2026-05-07 15:38:53"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.055 ms","timestamp":"2026-05-07 15:38:53"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 0.961 ms","timestamp":"2026-05-07 15:38:53"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:38:53"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.301 ms","timestamp":"2026-05-07 15:38:59"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 0.733 ms","timestamp":"2026-05-07 15:38:59"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 2.024 ms","timestamp":"2026-05-07 15:38:59"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.521 ms","timestamp":"2026-05-07 15:38:59"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 4.016 ms","timestamp":"2026-05-07 15:38:59"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.087 ms","timestamp":"2026-05-07 15:38:59"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:39:03"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.331 ms","timestamp":"2026-05-07 15:39:03"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 0.532 ms","timestamp":"2026-05-07 15:39:03"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 2.849 ms","timestamp":"2026-05-07 15:39:03"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 0.754 ms","timestamp":"2026-05-07 15:39:03"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.033 ms","timestamp":"2026-05-07 15:39:03"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.230 ms","timestamp":"2026-05-07 15:39:03"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:42:26"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.882 ms","timestamp":"2026-05-07 15:42:26"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 0.875 ms","timestamp":"2026-05-07 15:42:26"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:42:29"}
+{"level":"info","message":"GET /api/v1/auth/me 200 323 - 1.234 ms","timestamp":"2026-05-07 15:42:29"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 0.996 ms","timestamp":"2026-05-07 15:42:30"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.062 ms","timestamp":"2026-05-07 15:42:30"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:42:34"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.416 ms","timestamp":"2026-05-07 15:42:34"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.141 ms","timestamp":"2026-05-07 15:42:34"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.372 ms","timestamp":"2026-05-07 15:42:34"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.305 ms","timestamp":"2026-05-07 15:42:34"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.048 ms","timestamp":"2026-05-07 15:42:34"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 0.729 ms","timestamp":"2026-05-07 15:42:34"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:42:45"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.202 ms","timestamp":"2026-05-07 15:42:45"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 0.504 ms","timestamp":"2026-05-07 15:42:45"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.224 ms","timestamp":"2026-05-07 15:42:45"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 0.639 ms","timestamp":"2026-05-07 15:42:45"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 2.478 ms","timestamp":"2026-05-07 15:42:45"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.460 ms","timestamp":"2026-05-07 15:42:45"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:46:31"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 2.633 ms","timestamp":"2026-05-07 15:46:31"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.592 ms","timestamp":"2026-05-07 15:46:31"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 0.885 ms","timestamp":"2026-05-07 15:46:32"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:46:32"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.698 ms","timestamp":"2026-05-07 15:46:35"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 0.893 ms","timestamp":"2026-05-07 15:46:35"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.508 ms","timestamp":"2026-05-07 15:46:35"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 0.831 ms","timestamp":"2026-05-07 15:46:35"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.599 ms","timestamp":"2026-05-07 15:46:35"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.025 ms","timestamp":"2026-05-07 15:46:35"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:46:35"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 1.586 ms","timestamp":"2026-05-07 15:46:58"}
+{"level":"info","message":"GET /api/v1/auth/me 304 - - 0.875 ms","timestamp":"2026-05-07 15:46:58"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 1.531 ms","timestamp":"2026-05-07 15:46:58"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.452 ms","timestamp":"2026-05-07 15:46:58"}
+{"level":"info","message":"GET /api/v1/markets?status=active&limit=50&sort=volume 304 - - 2.609 ms","timestamp":"2026-05-07 15:46:58"}
+{"level":"info","message":"GET /api/v1/wallet/transactions?limit=5 304 - - 1.005 ms","timestamp":"2026-05-07 15:46:58"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:46:58"}
+{"level":"info","message":"WS connected: ::1","timestamp":"2026-05-07 15:46:58"}
