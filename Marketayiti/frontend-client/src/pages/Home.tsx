@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  TrendingUp, Wallet, Activity,
+  TrendingUp, Activity,
   ArrowUpRight, ArrowDownRight, Zap,
-  ChevronRight, X,
+  ChevronRight, X, Wallet,
 } from 'lucide-react';
 import { useMarkets }         from '../hooks/useMarkets';
 import { useWebSocket }       from '../hooks/useRealtime';
@@ -435,87 +435,6 @@ export default function Home() {
           margin: '0 auto',
           padding: isMobile ? '20px 16px' : isTablet ? '28px 24px' : '36px 40px',
         }}>
-
-          {/* ════════════════════════════════════════════════════
-              TOP BAR
-          ════════════════════════════════════════════════════ */}
-          <div style={{
-            display: 'flex', alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: isMobile ? 24 : 36,
-            gap: 12,
-          }}>
-            {/* Title */}
-            <div>
-              <h1 style={{
-                fontSize: isMobile ? 20 : 26,
-                fontWeight: 800, color: 'white',
-                letterSpacing: '-.025em', lineHeight: 1.1,
-              }}>
-                {locale === 'fr' ? 'Marchés' : 'Machè'}
-                <span style={{ color: '#3b82f6', marginLeft: 6 }}>Ayiti</span>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center',
-                  marginLeft: 10, fontSize: isMobile ? 9 : 10,
-                  fontWeight: 700, color: '#ef4444',
-                  background: 'rgba(239,68,68,.1)',
-                  border: '1px solid rgba(239,68,68,.25)',
-                  borderRadius: 99, padding: '2px 8px',
-                  verticalAlign: 'middle', letterSpacing: '.08em',
-                  textTransform: 'uppercase', gap: 4,
-                }}>
-                  <span className="am-live" style={{
-                    width: 5, height: 5, borderRadius: '50%',
-                    background: '#ef4444', display: 'inline-block',
-                  }} />
-                  LIVE
-                </span>
-              </h1>
-              <p style={{ fontSize: isMobile ? 11 : 12, color: '#4b6376', marginTop: 4, fontWeight: 500 }}>
-                {locale === 'fr' ? "Prédisez l'avenir d'Haïti" : 'Predi avni Ayiti'}
-              </p>
-            </div>
-
-            {/* Right: balance pill (mobile) + drawer button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-              {isMobile && user && (
-                <Link to={path('portfolio')} style={{
-                  display: 'flex', alignItems: 'center', gap: 7,
-                  background: 'rgba(16,185,129,.08)',
-                  border: '1px solid rgba(16,185,129,.18)',
-                  borderRadius: 10, padding: '7px 13px', textDecoration: 'none',
-                }}>
-                  <span style={{
-                    fontSize: 15, fontWeight: 800, color: '#10b981',
-                    fontFamily: 'JetBrains Mono, monospace',
-                  }}>
-                    {fmtHTG(balance)}
-                  </span>
-                  <span style={{ fontSize: 9, color: '#4b6376', fontWeight: 700 }}>HTG</span>
-                </Link>
-              )}
-
-              {!isDesktop && (
-                <button
-                  onClick={() => setDrawerOpen(true)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 7,
-                    background: 'rgba(255,255,255,.05)',
-                    border: '1px solid rgba(255,255,255,.09)',
-                    borderRadius: 10, color: '#94a3b8', cursor: 'pointer',
-                    padding: isMobile ? '9px 12px' : '9px 16px',
-                    fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
-                    transition: 'all .15s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.09)'; e.currentTarget.style.color = 'white'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; e.currentTarget.style.color = '#94a3b8'; }}
-                >
-                  <Wallet size={14} />
-                  {!isMobile && (locale === 'fr' ? 'Portefeuille' : 'Pòtfolyo')}
-                </button>
-              )}
-            </div>
-          </div>
 
           {/* ════════════════════════════════════════════════════
               HERO BANNERS
