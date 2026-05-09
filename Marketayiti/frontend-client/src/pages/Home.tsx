@@ -5,13 +5,13 @@ import {
   ArrowUpRight, ArrowDownRight, Zap,
   ChevronRight, X, BarChart3,
 } from 'lucide-react';
-import { useMarkets }         from '../hooks/useMarkets';
-import { useWebSocket }       from '../hooks/useRealtime';
-import { useAuth }            from '../context/AuthContext';
-import { useLocale }          from '../hooks/useLocale';
-import MarketCard             from '../components/market/MarketCard';
+import { useMarkets } from '../hooks/useMarkets';
+import { useWebSocket } from '../hooks/useRealtime';
+import { useAuth } from '../context/AuthContext';
+import { useLocale } from '../hooks/useLocale';
+import MarketCard from '../components/market/MarketCard';
 import { MarketGridSkeleton } from '../components/ui/Skeleton';
-import { walletAPI }          from '../api';
+import { walletAPI } from '../api';
 
 /* ─── viewport ─────────────────────────────────────────────────────────────── */
 function useVP() {
@@ -28,7 +28,7 @@ function useVP() {
 function fmtHTG(v: number | string | null | undefined) {
   const n = parseFloat(String(v ?? 0)) || 0;
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
   return Math.floor(n).toLocaleString();
 }
 
@@ -158,10 +158,10 @@ function SkeletonCard() {
    HOME
 ═══════════════════════════════════════════════════════════════════════════════ */
 export default function Home() {
-  const { user }         = useAuth();
+  const { user } = useAuth();
   const { locale, path } = useLocale();
   const { markets, loading, applyMarketUpdate } = useMarkets({ limit: 24 });
-  const [activity, setActivity]   = useState<any[]>([]);
+  const [activity, setActivity] = useState<any[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { isMobile, isTablet, isDesktop } = useVP();
 
@@ -180,14 +180,14 @@ export default function Home() {
   useEffect(() => {
     walletAPI.getTransactions({ limit: 5 })
       .then(r => setActivity(r.data || []))
-      .catch(() => {});
+      .catch(() => { });
   }, [user]);
 
-  const balance    = parseFloat(String(user?.balance ?? 0)) || 0;
+  const balance = parseFloat(String(user?.balance ?? 0)) || 0;
   const balanceUSD = (balance / 132).toFixed(2);
-  const cols       = isDesktop ? 'repeat(2,1fr)' : isMobile ? '1fr' : 'repeat(2,1fr)';
-  const topMkts    = markets.slice(0, 6);
-  const restMkts   = markets.slice(6);
+  const cols = isDesktop ? 'repeat(2,1fr)' : isMobile ? '1fr' : 'repeat(2,1fr)';
+  const topMkts = markets.slice(0, 6);
+  const restMkts = markets.slice(6);
 
   /* ── sidebar ── */
   const Sidebar = () => (
@@ -349,8 +349,8 @@ export default function Home() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {[
             { label: locale === 'fr' ? 'Marchés actifs' : 'Machè aktif', value: markets.filter(m => m.status === 'active').length, color: '#3b82f6', mono: false },
-            { label: locale === 'fr' ? 'Volume total'   : 'Volim total',   value: fmtHTG(markets.reduce((a, m) => a + (m.total_volume || 0), 0)) + ' HTG', color: '#10b981', mono: true },
-            { label: locale === 'fr' ? 'Paris placés'   : 'Pari fè',       value: markets.reduce((a, m) => a + (m.bet_count || 0), 0).toLocaleString(), color: '#a371f7', mono: false },
+            { label: locale === 'fr' ? 'Volume total' : 'Volim total', value: fmtHTG(markets.reduce((a, m) => a + (m.total_volume || 0), 0)) + ' HTG', color: '#10b981', mono: true },
+            { label: locale === 'fr' ? 'Paris placés' : 'Pari fè', value: markets.reduce((a, m) => a + (m.bet_count || 0), 0).toLocaleString(), color: '#a371f7', mono: false },
           ].map(s => (
             <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: '#4b6376', fontWeight: 500 }}>{s.label}</span>
@@ -399,7 +399,7 @@ export default function Home() {
       <div style={{
         background: '#090d12',
         minHeight: '100vh',
-        paddingBottom: 80,
+        paddingBottom: 0,
         fontFamily: "'DM Sans', system-ui, sans-serif",
       }}>
         <div style={{
@@ -665,6 +665,9 @@ export default function Home() {
             <Sidebar />
           </Drawer>
         )}
+
+        {/* Spacer pour éviter le scroll blanc (hauteur navbar + marge) */}
+        <div style={{ height: isMobile ? 80 : 60 }} />
       </div>
     </>
   );

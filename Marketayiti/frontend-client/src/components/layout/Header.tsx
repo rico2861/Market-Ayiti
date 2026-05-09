@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, LogOut, User, TrendingUp, Menu, X,
-  ChevronDown, Wallet, Home, BarChart2, Award, Globe, Bell
+  ChevronDown, Wallet, Home, BarChart2, Award, Globe
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
@@ -13,7 +13,7 @@ import WalletModal from '../wallet/WalletModal';
 import clsx from 'clsx';
 
 const CAT_EMOJI: Record<string, string> = {
-  '':'🌐', nouvo:'🔥', politik:'🗳️', spo:'⚽', ekonomi:'💰', kilti:'🎭', sosyal:'🏘️', lot:'📌'
+  '': '🌐', nouvo: '🔥', politik: '🗳️', spo: '⚽', ekonomi: '💰', kilti: '🎭', sosyal: '🏘️', lot: '📌'
 };
 
 export default function Header() {
@@ -27,15 +27,16 @@ export default function Header() {
   const activeCategory = (searchParams.get('category') || '') as MarketCategory | '';
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dropOpen,   setDropOpen]   = useState(false);
+  const [dropOpen, setDropOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
-  const [langOpen,   setLangOpen]   = useState(false);
-  const [scrolled,   setScrolled]   = useState(false);
-  const [searchVal,  setSearchVal]  = useState(searchParams.get('q') || '');
+  const [langOpen, setLangOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [searchVal, setSearchVal] = useState(searchParams.get('q') || '');
+  const [searchFocus, setSearchFocus] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(64);
 
-  const dropRef   = useRef<HTMLDivElement>(null);
-  const langRef   = useRef<HTMLDivElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
+  const langRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -124,13 +125,13 @@ export default function Header() {
   const onMarketsOrHome = location.pathname === path('home') || location.pathname.startsWith(path('markets'));
 
   const CATS: { id: MarketCategory | ''; label: string }[] = [
-    { id: '',        label: t('categories.all') },
+    { id: '', label: t('categories.all') },
     { id: 'politik', label: t('categories.politik') },
-    { id: 'spo',     label: t('categories.spo') },
+    { id: 'spo', label: t('categories.spo') },
     { id: 'ekonomi', label: t('categories.ekonomi') },
-    { id: 'kilti',   label: t('categories.kilti') },
-    { id: 'sosyal',  label: t('categories.sosyal') },
-    { id: 'lot',     label: t('categories.lot') },
+    { id: 'kilti', label: t('categories.kilti') },
+    { id: 'sosyal', label: t('categories.sosyal') },
+    { id: 'lot', label: t('categories.lot') },
   ];
 
   useEffect(() => {
@@ -146,18 +147,17 @@ export default function Header() {
 
   /* ── Logo component (reused in topbar + mobile menu) ── */
   const Logo = () => (
-    <Link to={path('home')} style={{ textDecoration:'none', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+    <Link to={path('home')} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
       <div style={{
-        width:30, height:30, borderRadius:8,
-        background:'linear-gradient(135deg,#1d4ed8,#2563eb)',
-        display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-        boxShadow:'0 2px 10px rgba(37,99,235,.3)',
+        width: 30, height: 30, borderRadius: 8,
+        background: 'linear-gradient(135deg,#1d4ed8,#2563eb)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        boxShadow: '0 2px 10px rgba(37,99,235,.3)',
       }}>
-        <TrendingUp size={15} color="white" strokeWidth={2.5}/>
+        <TrendingUp size={15} color="white" strokeWidth={2.5} />
       </div>
-      {/* ★ Always visible — removed hidden sm:block */}
-      <span style={{ fontWeight:800, color:'white', fontSize:15, letterSpacing:'-.4px', lineHeight:1 }}>
-        Ayiti<span style={{ color:'#388bfd' }}>Market</span>
+      <span style={{ fontWeight: 800, color: 'white', fontSize: 15, letterSpacing: '-.4px', lineHeight: 1 }}>
+        Ayiti<span style={{ color: '#388bfd' }}>Market</span>
       </span>
     </Link>
   );
@@ -178,77 +178,174 @@ export default function Header() {
 
         {/* Main nav row */}
         <div className="container">
-          <div style={{ display:'flex', alignItems:'center', gap:8, height:56 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 56 }}>
 
-            {/* ★ Logo — wordmark always visible on all screen sizes */}
-            <div style={{ marginRight:4 }}>
+            {/* Logo */}
+            <div style={{ marginRight: 4 }}>
               <Logo />
             </div>
 
             {/* Desktop nav links */}
-            <nav className="hidden lg:flex items-center gap-0.5" style={{ marginRight:4 }}>
+            <nav className="hidden lg:flex items-center gap-0.5" style={{ marginRight: 4 }}>
               {[
-                { to:path('home'),    label:t('nav.home') },
-                { to:path('markets'), label:t('nav.markets') },
-                ...(user ? [{ to:path('myBets'), label:t('nav.my_bets') }] : []),
+                { to: path('home'), label: t('nav.home') },
+                { to: path('markets'), label: t('nav.markets') },
+                ...(user ? [{ to: path('myBets'), label: t('nav.my_bets') }] : []),
               ].map(n => (
                 <Link key={n.to} to={n.to}
                   className={clsx('px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors',
                     isActive(n.to) ? 'text-white bg-white/[0.07]' : 'text-[#8b949e] hover:text-white hover:bg-white/[0.04]')}
-                  style={{ textDecoration:'none' }}>
+                  style={{ textDecoration: 'none' }}>
                   {n.label}
                 </Link>
               ))}
             </nav>
 
-            {/* Search */}
-            <form onSubmit={handleSearchSubmit} style={{ flex:1, maxWidth:460 }} className="hidden md:flex">
-              <div style={{ position:'relative', width:'100%' }}>
-                <Search size={14} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#484f58', pointerEvents:'none' }}/>
-                <input ref={searchRef} type="search" value={searchVal}
+            {/* Modern Search — Desktop only */}
+            <form onSubmit={handleSearchSubmit} style={{ flex: 1, maxWidth: 500 }} className="hidden lg:flex">
+              <div style={{ position: 'relative', width: '100%' }}>
+                <div style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: '3px',
+                  background: searchFocus ? 'linear-gradient(180deg, #3b82f6, #1d4ed8)' : 'transparent',
+                  borderRadius: '8px 0 0 8px',
+                  transition: 'all .3s ease'
+                }} />
+
+                <Search size={14} style={{
+                  position: 'absolute',
+                  left: 14,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: searchFocus ? '#3b82f6' : '#484f58',
+                  pointerEvents: 'none',
+                  transition: 'color .3s ease'
+                }} />
+
+                <input
+                  ref={searchRef}
+                  type="search"
+                  value={searchVal}
                   onChange={e => handleSearchChange(e.target.value)}
+                  onFocus={() => setSearchFocus(true)}
+                  onBlur={() => setSearchFocus(false)}
                   placeholder={t('nav.search_placeholder')}
-                  style={{ width:'100%', background:'#21262d', border:'1px solid rgba(255,255,255,0.08)',
-                    borderRadius:8, padding:'7px 36px 7px 34px', color:'white', fontSize:13,
-                    outline:'none', fontFamily:'inherit', transition:'border-color .15s, background .15s' }}
-                  onFocus={e => { e.target.style.borderColor='#1f6feb'; e.target.style.background='#161b22'; }}
-                  onBlur={e => { e.target.style.borderColor='rgba(255,255,255,0.08)'; e.target.style.background='#21262d'; }}
+                  style={{
+                    width: '100%',
+                    background: searchFocus ? 'rgba(59,130,246,0.05)' : '#21262d',
+                    border: searchFocus ? '1.5px solid #3b82f6' : '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 8,
+                    padding: '9px 36px 9px 38px',
+                    color: 'white',
+                    fontSize: 13,
+                    outline: 'none',
+                    fontFamily: 'inherit',
+                    transition: 'all .2s ease',
+                    boxShadow: searchFocus ? '0 0 0 3px rgba(59,130,246,0.1)' : 'none'
+                  }}
                 />
+
                 {!searchVal && (
-                  <span style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)',
-                    background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)',
-                    borderRadius:4, padding:'1px 6px', fontSize:11, color:'#484f58', pointerEvents:'none' }}>/</span>
+                  <span style={{
+                    position: 'absolute',
+                    right: 10,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 4,
+                    padding: '2px 6px',
+                    fontSize: 11,
+                    color: '#484f58',
+                    pointerEvents: 'none',
+                    fontFamily: 'monospace'
+                  }}>/</span>
+                )}
+
+                {searchVal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchVal('');
+                      if (location.pathname.includes('markets')) {
+                        setSearchParams(prev => { const n = new URLSearchParams(prev); n.delete('q'); return n; }, { replace: true });
+                      }
+                    }}
+                    style={{
+                      position: 'absolute',
+                      right: 10,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'rgba(255,255,255,0.08)',
+                      border: 'none',
+                      borderRadius: 4,
+                      padding: '4px 6px',
+                      cursor: 'pointer',
+                      color: '#8b949e',
+                      display: 'flex',
+                      alignItems: 'center',
+                      transition: 'all .2s ease'
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)';
+                      (e.currentTarget as HTMLElement).style.color = 'white';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
+                      (e.currentTarget as HTMLElement).style.color = '#8b949e';
+                    }}
+                  >
+                    <X size={14} />
+                  </button>
                 )}
               </div>
             </form>
 
-            <div style={{ flex:1 }}/>
+            <div style={{ flex: 1 }} />
 
             {/* Right side */}
-            <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
 
               {/* Language switcher */}
-              <div ref={langRef} style={{ position:'relative' }}>
-                <button onClick={() => setLangOpen(v=>!v)}
-                  style={{ display:'flex', alignItems:'center', gap:5, padding:'6px 10px',
-                    background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)',
-                    borderRadius:8, cursor:'pointer', color:'#8b949e', fontSize:12, fontWeight:600, fontFamily:'inherit' }}>
-                  <Globe size={13}/>{locale.toUpperCase()}<ChevronDown size={11}/>
+              <div ref={langRef} style={{ position: 'relative' }}>
+                <button onClick={() => setLangOpen(v => !v)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px',
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 8, cursor: 'pointer', color: '#8b949e', fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                    transition: 'all .2s ease'
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
+                    (e.currentTarget as HTMLElement).style.color = '#e6edf3';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                    (e.currentTarget as HTMLElement).style.color = '#8b949e';
+                  }}>
+                  <Globe size={13} />{locale.toUpperCase()}<ChevronDown size={11} />
                 </button>
                 {langOpen && (
-                  <div style={{ position:'absolute', right:0, top:'calc(100% + 6px)', background:'#161b22',
-                    border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:6,
-                    zIndex:100, minWidth:130, boxShadow:'0 8px 32px rgba(0,0,0,0.5)' }}>
+                  <div style={{
+                    position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#161b22',
+                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 6,
+                    zIndex: 100, minWidth: 130, boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                  }}>
                     {SUPPORTED_LOCALES.map(loc => (
                       <button key={loc} onClick={() => { changeLocale(loc); setLangOpen(false); }}
-                        style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'8px 12px',
-                          background: locale===loc ? 'rgba(31,111,235,0.15)' : 'none',
-                          border:'none', borderRadius:7, cursor:'pointer', fontFamily:'inherit',
-                          fontSize:13, color: locale===loc ? '#388bfd' : '#e6edf3', fontWeight: locale===loc ? 600 : 400,
-                          textAlign:'left' }}>
-                        <span style={{ fontSize:16 }}>{loc==='fr'?'🇫🇷':'🇭🇹'}</span>
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px',
+                          background: locale === loc ? 'rgba(31,111,235,0.15)' : 'none',
+                          border: 'none', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
+                          fontSize: 13, color: locale === loc ? '#388bfd' : '#e6edf3', fontWeight: locale === loc ? 600 : 400,
+                          textAlign: 'left'
+                        }}>
+                        <span style={{ fontSize: 16 }}>{loc === 'fr' ? '🇫🇷' : '🇭🇹'}</span>
                         {LOCALE_NAMES[loc]}
-                        {locale===loc && <span style={{ marginLeft:'auto', color:'#388bfd', fontSize:12 }}>✓</span>}
+                        {locale === loc && <span style={{ marginLeft: 'auto', color: '#388bfd', fontSize: 12 }}>✓</span>}
                       </button>
                     ))}
                   </div>
@@ -257,86 +354,112 @@ export default function Header() {
 
               {user ? (
                 <>
-                  {/* Balance pill — hidden on mobile (shown in bottom nav / drawer instead) */}
+                  {/* Balance pill */}
                   <button onClick={() => setWalletOpen(true)}
                     className="hidden sm:flex"
-                    style={{ alignItems:'center', gap:5, padding:'6px 10px',
-                      background:'rgba(63,185,80,0.1)', border:'1px solid rgba(63,185,80,0.2)',
-                      borderRadius:8, cursor:'pointer', color:'#3fb950', fontSize:12, fontWeight:700,
-                      fontFamily:'JetBrains Mono,monospace' }}>
-                    <Wallet size={12}/>
+                    style={{
+                      alignItems: 'center', gap: 5, padding: '6px 10px',
+                      background: 'rgba(63,185,80,0.1)', border: '1px solid rgba(63,185,80,0.2)',
+                      borderRadius: 8, cursor: 'pointer', color: '#3fb950', fontSize: 12, fontWeight: 700,
+                      fontFamily: 'JetBrains Mono,monospace', transition: 'all .2s ease'
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(63,185,80,0.2)';
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = 'rgba(63,185,80,0.1)';
+                    }}>
+                    <Wallet size={12} />
                     {Math.floor(user.balance).toLocaleString()} HTG
                   </button>
 
                   {/* User dropdown */}
-                  <div ref={dropRef} style={{ position:'relative' }}>
-                    <button onClick={() => setDropOpen(v=>!v)}
-                      style={{ display:'flex', alignItems:'center', gap:6, padding:'5px 8px',
-                        background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)',
-                        borderRadius:8, cursor:'pointer', fontFamily:'inherit' }}>
-                      <div style={{ width:24, height:24, borderRadius:'50%', background:'#1f6feb',
-                        display:'flex', alignItems:'center', justifyContent:'center',
-                        fontSize:11, fontWeight:700, color:'white', flexShrink:0 }}>
+                  <div ref={dropRef} style={{ position: 'relative' }}>
+                    <button onClick={() => setDropOpen(v => !v)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
+                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', transition: 'all .2s ease'
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
+                      }}>
+                      <div style={{
+                        width: 24, height: 24, borderRadius: '50%', background: '#1f6feb',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 11, fontWeight: 700, color: 'white', flexShrink: 0
+                      }}>
                         {user.username[0].toUpperCase()}
                       </div>
-                      <span style={{ fontSize:12, color:'#e6edf3', fontWeight:500 }} className="hidden sm:block">
+                      <span style={{ fontSize: 12, color: '#e6edf3', fontWeight: 500 }} className="hidden sm:block">
                         {user.username}
                       </span>
-                      <ChevronDown size={11} color="#8b949e" className="hidden sm:block"/>
+                      <ChevronDown size={11} color="#8b949e" className="hidden sm:block" />
                     </button>
                     {dropOpen && (
-                      <div style={{ position:'absolute', right:0, top:'calc(100% + 6px)', background:'#161b22',
-                        border:'1px solid rgba(255,255,255,0.1)', borderRadius:12, padding:8,
-                        zIndex:100, minWidth:200, boxShadow:'0 8px 32px rgba(0,0,0,0.5)' }}>
-                        <div style={{ padding:'8px 12px 10px', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:6 }}>
-                          <div style={{ fontSize:13, fontWeight:700, color:'white' }}>@{user.username}</div>
-                          <div style={{ fontSize:12, color:'#3fb950', fontFamily:'JetBrains Mono,monospace', marginTop:2 }}>
+                      <div style={{
+                        position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: '#161b22',
+                        border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 8,
+                        zIndex: 100, minWidth: 200, boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+                      }}>
+                        <div style={{ padding: '8px 12px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: 6 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>@{user.username}</div>
+                          <div style={{ fontSize: 12, color: '#3fb950', fontFamily: 'JetBrains Mono,monospace', marginTop: 2 }}>
                             {user.balance.toLocaleString()} HTG
                           </div>
                         </div>
                         {[
-                          { to:path('profile'),   icon:<User size={13}/>,    label: locale==='fr'?'Mon Profil':'Pwofil Mwen' },
-                          { to:path('portfolio'), icon:<Wallet size={13}/>,  label: locale==='fr'?'Portefeuille':'Pòtfolyo' },
-                          { to:path('myBets'),    icon:<BarChart2 size={13}/>, label: locale==='fr'?'Mes Paris':'Pari Mwen' },
+                          { to: path('profile'), icon: <User size={13} />, label: locale === 'fr' ? 'Mon Profil' : 'Pwofil Mwen' },
+                          { to: path('portfolio'), icon: <Wallet size={13} />, label: locale === 'fr' ? 'Portefeuille' : 'Pòtfolyo' },
+                          { to: path('myBets'), icon: <BarChart2 size={13} />, label: locale === 'fr' ? 'Mes Paris' : 'Pari Mwen' },
                         ].map(({ to, icon, label }) => (
                           <Link key={to} to={to} onClick={() => setDropOpen(false)}
-                            style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 12px',
-                              borderRadius:8, fontSize:13, color:'#e6edf3', textDecoration:'none',
-                              transition:'background .12s' }}
-                            onMouseEnter={e=>(e.currentTarget.style.background='rgba(255,255,255,0.05)')}
-                            onMouseLeave={e=>(e.currentTarget.style.background='none')}>
-                            <span style={{ color:'#8b949e' }}>{icon}</span>{label}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px',
+                              borderRadius: 8, fontSize: 13, color: '#e6edf3', textDecoration: 'none',
+                              transition: 'background .12s'
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.05)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                            <span style={{ color: '#8b949e' }}>{icon}</span>{label}
                           </Link>
                         ))}
-                        <hr style={{ border:'none', borderTop:'1px solid rgba(255,255,255,0.06)', margin:'6px 0' }}/>
+                        <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', margin: '6px 0' }} />
                         <button onClick={() => { setDropOpen(false); logout(); navigate(path('home')); }}
-                          style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'8px 12px',
-                            borderRadius:8, fontSize:13, color:'#f85149', background:'none', border:'none',
-                            cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}
-                          onMouseEnter={e=>(e.currentTarget.style.background='rgba(248,81,73,0.08)')}
-                          onMouseLeave={e=>(e.currentTarget.style.background='none')}>
-                          <LogOut size={13}/> {locale==='fr'?'Déconnexion':'Dekonekte'}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px',
+                            borderRadius: 8, fontSize: 13, color: '#f85149', background: 'none', border: 'none',
+                            cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left'
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(248,81,73,0.08)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                          <LogOut size={13} /> {locale === 'fr' ? 'Déconnexion' : 'Dekonekte'}
                         </button>
                       </div>
                     )}
                   </div>
                 </>
               ) : (
-                <div style={{ display:'flex', gap:6 }}>
-                  <Link to={path('login')} className="btn-ghost hidden sm:flex" style={{ padding:'6px 12px', fontSize:12 }}>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Link to={path('login')} className="btn-ghost hidden sm:flex" style={{ padding: '6px 12px', fontSize: 12 }}>
                     {t('nav.login')}
                   </Link>
-                  <Link to={path('register')} className="btn-yellow" style={{ padding:'6px 12px', fontSize:12 }}>
+                  <Link to={path('register')} className="btn-yellow" style={{ padding: '6px 12px', fontSize: 12 }}>
                     {t('nav.register')}
                   </Link>
                 </div>
               )}
 
-              {/* Hamburger — mobile only */}
-              <button onClick={() => setMobileOpen(v=>!v)} className="lg:hidden"
-                style={{ width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center',
-                  background:'none', border:'none', cursor:'pointer', color:'#8b949e' }}>
-                {mobileOpen ? <X size={20}/> : <Menu size={20}/>}
+              {/* Hamburger — HIDDEN ON DESKTOP */}
+              <button onClick={() => setMobileOpen(v => !v)} className="md:hidden"
+                style={{
+                  width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'none', border: 'none', cursor: 'pointer', color: '#8b949e'
+                }}>
+                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
             </div>
           </div>
@@ -344,22 +467,24 @@ export default function Header() {
 
         {/* Category bar */}
         {onMarketsOrHome && (
-          <div style={{ borderTop:'1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
             <div className="container">
-              <div className="noscroll" style={{ display:'flex', alignItems:'center', gap:4, overflowX:'auto', padding:'7px 0' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:6, paddingRight:8, flexShrink:0 }}>
-                  <div className="live-dot"/>
-                  <span style={{ color:'#f85149', fontSize:10, fontWeight:700, letterSpacing:'1px' }}>LIVE</span>
+              <div className="noscroll" style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto', padding: '7px 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingRight: 8, flexShrink: 0 }}>
+                  <div className="live-dot" />
+                  <span style={{ color: '#f85149', fontSize: 10, fontWeight: 700, letterSpacing: '1px' }}>LIVE</span>
                 </div>
-                <div style={{ width:1, height:14, background:'rgba(255,255,255,0.08)', flexShrink:0, marginRight:4 }}/>
+                <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.08)', flexShrink: 0, marginRight: 4 }} />
                 {CATS.map(c => (
                   <button key={c.id} onClick={() => handleCat(c.id as MarketCategory | '')}
-                    style={{ padding:'4px 12px', borderRadius:20, fontSize:12, cursor:'pointer', flexShrink:0,
-                      background: activeCategory===c.id ? '#1f6feb' : 'rgba(255,255,255,0.04)',
-                      color: activeCategory===c.id ? 'white' : '#8b949e',
-                      border:'1px solid '+(activeCategory===c.id?'#1f6feb':'rgba(255,255,255,0.07)'),
-                      fontWeight: activeCategory===c.id ? 600 : 400,
-                      fontFamily:'inherit', transition:'all .15s', whiteSpace:'nowrap' }}>
+                    style={{
+                      padding: '4px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer', flexShrink: 0,
+                      background: activeCategory === c.id ? '#1f6feb' : 'rgba(255,255,255,0.04)',
+                      color: activeCategory === c.id ? 'white' : '#8b949e',
+                      border: '1px solid ' + (activeCategory === c.id ? '#1f6feb' : 'rgba(255,255,255,0.07)'),
+                      fontWeight: activeCategory === c.id ? 600 : 400,
+                      fontFamily: 'inherit', transition: 'all .15s', whiteSpace: 'nowrap'
+                    }}>
                     {CAT_EMOJI[c.id]} {c.label}
                   </button>
                 ))}
@@ -370,63 +495,69 @@ export default function Header() {
       </header>
 
       {/* Spacer */}
-      <div style={{ height: headerHeight + (onMarketsOrHome ? 10 : 0), flexShrink:0 }}/>
+      <div style={{ height: headerHeight + (onMarketsOrHome ? 10 : 0), flexShrink: 0 }} />
 
       {/* Mobile menu drawer */}
-      <div className={clsx('mobile-menu lg:hidden', mobileOpen && 'open')}>
-        <div style={{ padding:16 }}>
-          {/* ★ Header row: logo + close */}
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+      <div className={clsx('mobile-menu md:hidden', mobileOpen && 'open')}>
+        <div style={{ padding: 16 }}>
+          {/* Header row: logo + close */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <Logo />
             <button onClick={() => setMobileOpen(false)}
-              style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.09)',
-                borderRadius:8, cursor:'pointer', color:'#8b949e', padding:'6px 10px',
-                display:'flex', alignItems:'center' }}>
-              <X size={18}/>
+              style={{
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.09)',
+                borderRadius: 8, cursor: 'pointer', color: '#8b949e', padding: '6px 10px',
+                display: 'flex', alignItems: 'center'
+              }}>
+              <X size={18} />
             </button>
           </div>
 
           {/* Mobile search */}
-          <form onSubmit={handleSearchSubmit} style={{ marginBottom:16 }}>
-            <div style={{ position:'relative' }}>
-              <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'#484f58' }}/>
+          <form onSubmit={handleSearchSubmit} style={{ marginBottom: 16 }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#484f58' }} />
               <input type="search" value={searchVal} onChange={e => handleSearchChange(e.target.value)}
-                placeholder={t('nav.search_placeholder')} className="input" style={{ paddingLeft:36 }}/>
+                placeholder={t('nav.search_placeholder')} className="input" style={{ paddingLeft: 36 }} />
             </div>
           </form>
 
           {/* Mobile nav links */}
-          <nav style={{ marginBottom:16 }}>
+          <nav style={{ marginBottom: 16 }}>
             {[
-              { to:path('home'),      label:t('nav.home'),      icon:<Home size={15}/> },
-              { to:path('markets'),   label:t('nav.markets'),   icon:<BarChart2 size={15}/> },
+              { to: path('home'), label: t('nav.home'), icon: <Home size={15} /> },
+              { to: path('markets'), label: t('nav.markets'), icon: <BarChart2 size={15} /> },
               ...(user ? [
-                { to:path('portfolio'), label:t('nav.portfolio'), icon:<Wallet size={15}/> },
-                { to:path('myBets'),    label:t('nav.my_bets'),   icon:<Award size={15}/> },
+                { to: path('portfolio'), label: t('nav.portfolio'), icon: <Wallet size={15} /> },
+                { to: path('myBets'), label: t('nav.my_bets'), icon: <Award size={15} /> },
               ] : []),
             ].map(n => (
               <Link key={n.to} to={n.to}
-                style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 12px', borderRadius:10,
-                  fontSize:14, fontWeight:500, marginBottom:4, textDecoration:'none',
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10,
+                  fontSize: 14, fontWeight: 500, marginBottom: 4, textDecoration: 'none',
                   background: isActive(n.to) ? 'rgba(255,255,255,0.06)' : 'none',
-                  color: isActive(n.to) ? 'white' : '#8b949e' }}>
-                <span style={{ color:isActive(n.to)?'#1f6feb':'#484f58' }}>{n.icon}</span>{n.label}
+                  color: isActive(n.to) ? 'white' : '#8b949e'
+                }}>
+                <span style={{ color: isActive(n.to) ? '#1f6feb' : '#484f58' }}>{n.icon}</span>{n.label}
               </Link>
             ))}
           </nav>
 
           {/* Language */}
-          <div style={{ marginBottom:16, paddingBottom:16, borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
-            <p style={{ fontSize:10, color:'#484f58', textTransform:'uppercase', letterSpacing:'0.05em', fontWeight:600, margin:'0 0 8px' }}>
+          <div style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize: 10, color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, margin: '0 0 8px' }}>
               {t('nav.language')}
             </p>
-            <div style={{ display:'flex', gap:8 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
               {SUPPORTED_LOCALES.map(loc => (
                 <button key={loc} onClick={() => { changeLocale(loc); setMobileOpen(false); }}
-                  style={{ flex:1, padding:'8px 12px', borderRadius:8, fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
-                    background: locale===loc ? '#1f6feb' : '#21262d',
-                    color: locale===loc ? 'white' : '#8b949e', border:'none' }}>
-                  {loc==='fr'?'🇫🇷':'🇭🇹'} {LOCALE_NAMES[loc]}
+                  style={{
+                    flex: 1, padding: '8px 12px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    background: locale === loc ? '#1f6feb' : '#21262d',
+                    color: locale === loc ? 'white' : '#8b949e', border: 'none'
+                  }}>
+                  {loc === 'fr' ? '🇫🇷' : '🇭🇹'} {LOCALE_NAMES[loc]}
                 </button>
               ))}
             </div>
@@ -435,39 +566,47 @@ export default function Header() {
           {/* User section */}
           {user ? (
             <div>
-              <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 14px',
-                background:'#161b22', borderRadius:12, marginBottom:10,
-                border:'1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ width:38, height:38, borderRadius:'50%', background:'#1f6feb',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  fontSize:16, fontWeight:700, color:'white', flexShrink:0 }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px',
+                background: '#161b22', borderRadius: 12, marginBottom: 10,
+                border: '1px solid rgba(255,255,255,0.06)'
+              }}>
+                <div style={{
+                  width: 38, height: 38, borderRadius: '50%', background: '#1f6feb',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 16, fontWeight: 700, color: 'white', flexShrink: 0
+                }}>
                   {user.username[0].toUpperCase()}
                 </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:14, fontWeight:700, color:'white' }}>@{user.username}</div>
-                  <div style={{ fontSize:13, color:'#3fb950', fontFamily:'JetBrains Mono,monospace', marginTop:1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>@{user.username}</div>
+                  <div style={{ fontSize: 13, color: '#3fb950', fontFamily: 'JetBrains Mono,monospace', marginTop: 1 }}>
                     {Math.floor(user.balance).toLocaleString()} HTG
                   </div>
                 </div>
                 <button onClick={() => { setMobileOpen(false); setWalletOpen(true); }}
-                  style={{ padding:'7px 14px', background:'rgba(63,185,80,0.1)',
-                    border:'1px solid rgba(63,185,80,0.3)', borderRadius:8,
-                    color:'#3fb950', fontSize:12, fontWeight:700, cursor:'pointer',
-                    fontFamily:'inherit', flexShrink:0 }}>
+                  style={{
+                    padding: '7px 14px', background: 'rgba(63,185,80,0.1)',
+                    border: '1px solid rgba(63,185,80,0.3)', borderRadius: 8,
+                    color: '#3fb950', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                    fontFamily: 'inherit', flexShrink: 0
+                  }}>
                   + Depoze
                 </button>
               </div>
               <button onClick={() => { setMobileOpen(false); logout(); navigate(path('home')); }}
-                style={{ display:'flex', alignItems:'center', gap:8, width:'100%', padding:'9px 12px',
-                  background:'none', border:'none', cursor:'pointer',
-                  color:'#f85149', fontSize:13, fontFamily:'inherit', borderRadius:8 }}>
-                <LogOut size={14}/> {locale==='fr'?'Déconnexion':'Dekonekte'}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '9px 12px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#f85149', fontSize: 13, fontFamily: 'inherit', borderRadius: 8
+                }}>
+                <LogOut size={14} /> {locale === 'fr' ? 'Déconnexion' : 'Dekonekte'}
               </button>
             </div>
           ) : (
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              <Link to={path('login')} className="btn-ghost" style={{ justifyContent:'center', padding:11 }}>{t('nav.login')}</Link>
-              <Link to={path('register')} className="btn-yellow" style={{ justifyContent:'center', padding:11 }}>{t('nav.register')}</Link>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Link to={path('login')} className="btn-ghost" style={{ justifyContent: 'center', padding: 11 }}>{t('nav.login')}</Link>
+              <Link to={path('register')} className="btn-yellow" style={{ justifyContent: 'center', padding: 11 }}>{t('nav.register')}</Link>
             </div>
           )}
         </div>
@@ -476,16 +615,17 @@ export default function Header() {
       {/* Bottom nav — mobile/tablet */}
       <nav className="bottom-nav">
         {[
-          { to:path('home'),    icon:Home,      label:t('nav.home') },
-          { to:path('markets'), icon:BarChart2,  label:t('nav.markets') },
-          { to:user?path('portfolio'):path('login'), icon:Wallet, label:user?t('nav.portfolio'):t('nav.login') },
-          { to:user?path('myBets'):path('register'), icon:user?Award:User, label:user?t('nav.my_bets'):t('nav.register') },
-        ].map(({ to, icon:Icon, label }) => (
-          <Link key={to+label} to={to} className={clsx('bnav-item', isActive(to)&&'active')}>
-            <Icon size={20}/><span>{label}</span>
+          { to: path('home'), icon: Home, label: t('nav.home') },
+          { to: path('markets'), icon: BarChart2, label: t('nav.markets') },
+          { to: user ? path('portfolio') : path('login'), icon: Wallet, label: user ? t('nav.portfolio') : t('nav.login') },
+          { to: user ? path('myBets') : path('register'), icon: user ? Award : User, label: user ? t('nav.my_bets') : t('nav.register') },
+        ].map(({ to, icon: Icon, label }) => (
+          <Link key={to + label} to={to} className={clsx('bnav-item', isActive(to) && 'active')}>
+            <Icon size={20} /><span>{label}</span>
           </Link>
         ))}
       </nav>
     </>
   );
 }
+
