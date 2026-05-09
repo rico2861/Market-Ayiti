@@ -1,15 +1,12 @@
-import { useTranslation } from 'react-i18next';
-import { useLocation, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import { useLocale } from '../../hooks/useLocale';
 import { useState, useEffect } from 'react';
 
 export default function Footer() {
-  const { t } = useTranslation();
   const { locale, path } = useLocale();
   const year = new Date().getFullYear();
 
-  // Hook réactif pour détecter mobile
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 640 : false
   );
@@ -20,47 +17,192 @@ export default function Footer() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const links = [
-    { to: `/${locale}/cgu`, label: t('footer.terms') },
-    { to: `/${locale}/confidentialite`, label: t('footer.privacy') },
-    { to: `/${locale}/contact`, label: t('footer.contact') },
-    { to: `/${locale}/about`, label: t('footer.about') },
-  ];
-
   return (
     <>
-      {/* Footer desktop */}
-      <footer className="desktop-only" style={{
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        padding: '18px 0',
-        marginTop: 'auto'
+      <footer style={{
+        background: '#0d1117',
+        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+        marginTop: 120,
+        padding: isMobile ? '48px 16px 80px' : '64px 16px'
       }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          {/* Logo + links */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-            <Link to={path('home')} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <div style={{ width: 22, height: 22, borderRadius: 5, background: '#1f6feb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <TrendingUp size={12} color="white" strokeWidth={2.5} />
-              </div>
-              <span style={{ fontWeight: 700, color: '#484f58', fontSize: 12 }}>AyitiMarket</span>
-            </Link>
-            {links.map(({ to, label }) => (
-              <Link key={to} to={to} style={{ fontSize: 12, color: '#484f58', textDecoration: 'none', transition: 'color .15s' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#8b949e')}
-                onMouseLeave={e => (e.currentTarget.style.color = '#484f58')}>
-                {label}
+        {/* Container */}
+        <div style={{
+          maxWidth: 1400,
+          margin: '0 auto'
+        }}>
+          {/* Main Content */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+            gap: isMobile ? 40 : 60,
+            marginBottom: 48
+          }}>
+
+            {/* Column 1: Brand */}
+            <div>
+              <Link to={path('home')} style={{
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                marginBottom: 24
+              }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  background: 'linear-gradient(135deg, #388bfd, #1f6feb)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <TrendingUp size={18} color="white" strokeWidth={2.5} />
+                </div>
+                <span style={{
+                  fontSize: 15,
+                  fontWeight: 800,
+                  color: 'white'
+                }}>
+                  Ayiti<span style={{ color: '#388bfd' }}>Market</span>
+                </span>
               </Link>
-            ))}
+              <p style={{
+                fontSize: 13,
+                color: '#8b949e',
+                lineHeight: 1.6,
+                margin: 0
+              }}>
+                Prediction market platform. Trade insights, earn rewards.
+              </p>
+            </div>
+
+            {/* Column 2: Legal Links */}
+            <div>
+              <h4 style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#c9d1d9',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: 20,
+                margin: '0 0 20px'
+              }}>
+                Legal
+              </h4>
+              <nav style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12
+              }}>
+                {[
+                  { to: `/${locale}/cgu`, label: 'Terms of Service' },
+                  { to: `/${locale}/confidentialite`, label: 'Privacy Policy' },
+                  { to: `/${locale}/contact`, label: 'Contact' },
+                  { to: `/${locale}/about`, label: 'About' },
+                ].map(({ to, label }) => (
+                  <Link key={to} to={to} style={{
+                    fontSize: 13,
+                    color: '#8b949e',
+                    textDecoration: 'none',
+                    transition: 'all 0.3s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#388bfd';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#8b949e';
+                  }}>
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+
+            {/* Column 3: Resources */}
+            <div>
+              <h4 style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#c9d1d9',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: 20,
+                margin: '0 0 20px'
+              }}>
+                Resources
+              </h4>
+              <nav style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12
+              }}>
+                {[
+                  { to: path('home'), label: 'Home' },
+                  { to: path('markets'), label: 'Markets' },
+                ].map(({ to, label }) => (
+                  <Link key={to} to={to} style={{
+                    fontSize: 13,
+                    color: '#8b949e',
+                    textDecoration: 'none',
+                    transition: 'all 0.3s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = '#388bfd';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = '#8b949e';
+                  }}>
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
           </div>
-          {/* Right */}
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: '#484f58' }}>{t('footer.responsible')}</span>
-            <span style={{ fontSize: 11, color: '#484f58' }}>{t('footer.copyright', { year })}</span>
+
+          {/* Divider */}
+          <div style={{
+            borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+            paddingTop: 32
+          }}>
+            {/* Bottom Section */}
+            <div style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-between',
+              alignItems: isMobile ? 'flex-start' : 'center',
+              gap: isMobile ? 16 : 0
+            }}>
+              {/* Copyright */}
+              <p style={{
+                fontSize: 12,
+                color: '#484f58',
+                margin: 0
+              }}>
+                © {year} AyitiMarket. All rights reserved.
+              </p>
+
+              {/* Status */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                color: '#8b949e'
+              }}>
+                <div style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#22c55e'
+                }} />
+                All systems operational
+              </div>
+            </div>
           </div>
         </div>
       </footer>
 
-      {/* Spacer pour mobile/tablet (hauteur de la navbar fixe + padding) */}
+      {/* Mobile Spacer */}
       {isMobile && (
         <div style={{ height: 80 }} aria-hidden="true" />
       )}

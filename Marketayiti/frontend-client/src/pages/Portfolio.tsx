@@ -1,18 +1,19 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Wallet, ArrowUpCircle, ArrowDownCircle, TrendingUp, TrendingDown, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownLeft, TrendingUp, TrendingDown, Eye, EyeOff, Filter, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../hooks/useLocale';
 import { walletAPI } from '../api';
 import { Link } from 'react-router-dom';
-import WalletModal from '../components/wallet/WalletModal';
+import DepositModal from '../components/wallet/DepositModal';
+import WithdrawModal from '../components/wallet/WithdrawModal';
 
-const TX_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode; sign: string }> = {
-  deposit: { label: 'Depozit', color: '#22c55e', icon: <ArrowDownCircle size={20} />, sign: '+' },
-  withdrawal: { label: 'Retrè', color: '#ef4444', icon: <ArrowUpCircle size={20} />, sign: '-' },
-  win: { label: 'Gain Pari', color: '#22c55e', icon: <TrendingUp size={20} />, sign: '+' },
-  bet: { label: 'Mise Pari', color: '#ef4444', icon: <TrendingDown size={20} />, sign: '-' },
-  bet_slip: { label: 'Fich Kombi', color: '#ef4444', icon: <TrendingDown size={20} />, sign: '-' },
-  refund: { label: 'Rembourseman', color: '#eab308', icon: <ArrowDownCircle size={20} />, sign: '+' },
+const TX_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ReactNode; sign: string }> = {
+  deposit: { label: 'Depozit', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)', icon: <ArrowDownLeft size={18} />, sign: '+' },
+  withdrawal: { label: 'Retrè', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', icon: <ArrowUpRight size={18} />, sign: '-' },
+  win: { label: 'Gain Pari', color: '#22c55e', bg: 'rgba(34, 197, 94, 0.1)', icon: <TrendingUp size={18} />, sign: '+' },
+  bet: { label: 'Mise Pari', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', icon: <TrendingDown size={18} />, sign: '-' },
+  bet_slip: { label: 'Fich Kombi', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)', icon: <TrendingDown size={18} />, sign: '-' },
+  refund: { label: 'Rembourseman', color: '#eab308', bg: 'rgba(234, 179, 8, 0.1)', icon: <ArrowDownLeft size={18} />, sign: '+' },
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -23,12 +24,13 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }
 };
 
 const MONTHS = ['Janvye', 'Fevrye', 'Mas', 'Avril', 'Me', 'Jen', 'Jiyè', 'Out', 'Septanm', 'Oktòb', 'Novanm', 'Desanm'];
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 8;
 
 export default function Portfolio() {
   const { user, refresh: refreshUser } = useAuth();
   const { path } = useLocale();
-  const [walletOpen, setWalletOpen] = useState(false);
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
@@ -36,19 +38,36 @@ export default function Portfolio() {
   const [month, setMonth] = useState('');
   const [year, setYear] = useState('');
   const [page, setPage] = useState(1);
+  const [showBalance, setShowBalance] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchTransactions = async () => {
     setLoading(true);
     try {
-      const params: any = { limit: 200 };
-      if (typeFilter) params.type = typeFilter;
-      if (statusFilter) params.status = statusFilter;
-      if (month) params.month = month;
-      if (year) params.year = year;
+      const res = await walletAPI.getTransactions({ limit: 500 });
+      let filtered = res.data || [];
 
-      const res = await walletAPI.getTransactions(params);
-      setTransactions(res.data || []);
-      setPage(1); // Reset to first page when filters change
+      if (typeFilter) {
+        filtered = filtered.filter(t => t.type === typeFilter);
+      }
+      if (statusFilter) {
+        filtered = filtered.filter(t => t.status === statusFilter);
+      }
+      if (month) {
+        filtered = filtered.filter(t => {
+          const txMonth = new Date(t.created_at).getMonth() + 1;
+          return txMonth === parseInt(month);
+        });
+      }
+      if (year) {
+        filtered = filtered.filter(t => {
+          const txYear = new Date(t.created_at).getFullYear();
+          return txYear === parseInt(year);
+        });
+      }
+
+      setTransactions(filtered);
+      setPage(1);
     } catch (err) {
       console.error(err);
     } finally {
@@ -77,11 +96,12 @@ export default function Portfolio() {
 
   if (!user) {
     return (
-      <div style={{ textAlign: 'center', padding: '140px 20px', background: '#0d1117' }}>
-        <p style={{ color: '#8b949e', fontSize: 17, marginBottom: 28 }}>Ou dwe konekte pou wè pòtfolyo ou</p>
+      <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px', background: '#0d1117' }}>
+        <p style={{ color: '#8b949e', fontSize: 16, marginBottom: 24 }}>Ou dwe konekte pou wè pòtfolyo ou</p>
         <Link to={path('login')} style={{
-          background: '#1f6feb', color: 'white', padding: '16px 36px',
-          borderRadius: 14, textDecoration: 'none', fontWeight: 600, fontSize: 16
+          background: 'linear-gradient(135deg, #388bfd, #1f6feb)', color: 'white', padding: '12px 28px',
+          borderRadius: 10, textDecoration: 'none', fontWeight: 600, fontSize: 14, transition: 'all 0.3s',
+          boxShadow: '0 4px 20px rgba(56,139,253,0.3)', display: 'inline-block'
         }}>
           Konekte
         </Link>
@@ -90,240 +110,683 @@ export default function Portfolio() {
   }
 
   return (
-    <div style={{ background: '#0d1117', minHeight: '100vh', paddingBottom: '120px' }} className="fade-in">
-      <div style={{ maxWidth: 960, margin: '0 auto', padding: '40px 20px' }}>
+    <div className="portfolio-container" style={{
+      background: '#0d1117',
+      minHeight: '100vh',
+      paddingTop: 32,
+      paddingBottom: 60,
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Background decoration */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: 500,
+        height: 500,
+        background: 'radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%)',
+        borderRadius: '50%',
+        pointerEvents: 'none',
+        transform: 'translate(150px, -150px)',
+        zIndex: 0
+      }} />
 
+      <div className="portfolio-content" style={{
+        maxWidth: 1200,
+        margin: '0 auto',
+        padding: '0 16px',
+        position: 'relative',
+        zIndex: 1
+      }}>
         {/* Header */}
-        <div style={{ marginBottom: 40 }}>
+        <div style={{
+          marginBottom: 32,
+          animation: 'fadeInDown 0.6s ease-out'
+        }}>
           <h1 style={{
-            fontSize: 38,
-            fontWeight: 800,
-            background: 'linear-gradient(90deg, #ffffff, #a1a1aa)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            margin: 0
+            fontSize: window.innerWidth < 640 ? 28 : 36,
+            fontWeight: 700,
+            color: 'white',
+            margin: 0,
+            letterSpacing: '-0.5px'
           }}>
             Pòtfolyo
           </h1>
-          <p style={{ color: '#8b949e', fontSize: 16, marginTop: 6 }}>Jere lajan ou ak tout aktivite finansye yo</p>
+          <p style={{ color: '#8b949e', fontSize: 14, margin: '8px 0 0' }}>
+            Jere ak suiv aktivite finansye ou
+          </p>
         </div>
 
-        {/* Balance Card */}
+        {/* Main Balance Card */}
         <div style={{
-          background: 'linear-gradient(135deg, #1e2937 0%, #0f172a 100%)',
-          border: '1px solid rgba(148, 163, 184, 0.15)',
-          borderRadius: 24,
-          padding: '32px 28px',
-          marginBottom: 40,
-          position: 'relative',
-          overflow: 'hidden'
+          background: '#161b22',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 16,
+          padding: window.innerWidth < 640 ? 24 : 32,
+          marginBottom: 32,
+          animation: 'fadeInUp 0.6s ease-out 0.1s both'
         }}>
-          <div style={{ position: 'absolute', top: 20, right: 20, opacity: 0.08, fontSize: 140 }}>💰</div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: window.innerWidth < 640 ? 'column' : 'row',
+            justifyContent: 'space-between',
+            alignItems: window.innerWidth < 640 ? 'stretch' : 'center',
+            gap: window.innerWidth < 640 ? 24 : 32
+          }}>
             <div>
-              <div style={{ color: '#94a3b8', fontSize: 14, letterSpacing: '1px' }}>BALANS AKTYÈL</div>
-              <div style={{
-                fontSize: 52,
-                fontWeight: 800,
-                color: '#22c55e',
-                fontFamily: 'JetBrains Mono, monospace',
-                letterSpacing: '-0.04em',
-                marginTop: 8
-              }}>
-                {user.balance.toLocaleString()} <span style={{ fontSize: 26, opacity: 0.7 }}>HTG</span>
+              <p style={{ color: '#8b949e', fontSize: 12, margin: '0 0 8px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Balans Aktyèl
+              </p>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                <div style={{
+                  fontSize: window.innerWidth < 640 ? 32 : 44,
+                  fontWeight: 800,
+                  color: '#22c55e',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  letterSpacing: '-0.04em'
+                }}>
+                  {showBalance ? user.balance.toLocaleString() : '••••••'}
+                </div>
+                <span style={{ fontSize: window.innerWidth < 640 ? 18 : 24, opacity: 0.7, color: '#22c55e' }}>HTG</span>
+                <button
+                  onClick={() => setShowBalance(!showBalance)}
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    width: 36,
+                    height: 36,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#8b949e',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                  }}
+                >
+                  {showBalance ? <Eye size={18} /> : <EyeOff size={18} />}
+                </button>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={() => setWalletOpen(true)} style={{
-                background: '#22c55e', color: '#000', padding: '16px 32px', borderRadius: 16,
-                fontWeight: 700, fontSize: 16, display: 'flex', alignItems: 'center', gap: 10, border: 'none'
-              }}>
-                <ArrowDownCircle size={22} /> Depozite
+            <div style={{
+              display: 'flex',
+              gap: 12,
+              flexDirection: window.innerWidth < 640 ? 'column' : 'row',
+              width: window.innerWidth < 640 ? '100%' : 'auto'
+            }}>
+              <button
+                onClick={() => setDepositOpen(true)}
+                style={{
+                  background: '#22c55e',
+                  color: '#000',
+                  padding: '12px 20px',
+                  borderRadius: 10,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  flex: window.innerWidth < 640 ? 1 : 'auto',
+                  boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(34, 197, 94, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(34, 197, 94, 0.3)';
+                }}
+              >
+                <ArrowDownLeft size={16} />
+                Depozite
               </button>
-              <button onClick={() => setWalletOpen(true)} style={{
-                background: 'transparent', color: 'white', padding: '16px 32px', borderRadius: 16,
-                fontWeight: 600, fontSize: 16, border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', gap: 10
-              }}>
-                <ArrowUpCircle size={22} /> Retrè
+              <button
+                onClick={() => setWithdrawOpen(true)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  color: '#c9d1d9',
+                  padding: '12px 20px',
+                  borderRadius: 10,
+                  fontWeight: 600,
+                  fontSize: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                  flex: window.innerWidth < 640 ? 1 : 'auto'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)';
+                }}
+              >
+                <ArrowUpRight size={16} />
+                Retrè
               </button>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16, marginBottom: 40 }}>
+        {/* Stats Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(auto-fit, minmax(240px, 1fr))',
+          gap: 16,
+          marginBottom: 32,
+          animation: 'fadeInUp 0.6s ease-out 0.2s both'
+        }}>
           {[
-            { title: "Total Depozit", value: totalDeposits, color: "#22c55e" },
-            { title: "Total Retrè", value: totalWithdrawals, color: "#ef4444" },
-            { title: "Total Genyen", value: totalWins, color: "#eab308" },
+            { title: 'Total Depozit', value: totalDeposits, color: '#22c55e', Icon: ArrowDownLeft },
+            { title: 'Total Retrè', value: totalWithdrawals, color: '#ef4444', Icon: ArrowUpRight },
+            { title: 'Total Genyen', value: totalWins, color: '#eab308', Icon: TrendingUp },
           ].map((stat, i) => (
             <div key={i} style={{
-              background: '#161b22', border: '1px solid #30363d', borderRadius: 20,
-              padding: '24px 26px'
-            }}>
-              <div style={{ color: '#8b949e', fontSize: 14 }}>{stat.title}</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: stat.color, fontFamily: 'JetBrains Mono, monospace', marginTop: 10 }}>
-                {stat.value.toLocaleString()} HTG
+              background: '#161b22',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 12,
+              padding: 20,
+              transition: 'all 0.3s',
+              cursor: 'pointer'
+            }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#1c2128';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#161b22';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  background: `${stat.color}15`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: stat.color
+                }}>
+                  <stat.Icon size={18} />
+                </div>
+                <p style={{ color: '#8b949e', fontSize: 12, margin: 0, fontWeight: 600, textTransform: 'uppercase' }}>
+                  {stat.title}
+                </p>
               </div>
+              <p style={{
+                fontSize: 22,
+                fontWeight: 700,
+                color: stat.color,
+                fontFamily: 'JetBrains Mono, monospace',
+                margin: 0
+              }}>
+                {stat.value.toLocaleString()} <span style={{ fontSize: 12, opacity: 0.6 }}>HTG</span>
+              </p>
             </div>
           ))}
         </div>
 
-        {/* Filters + Info */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, marginBottom: 20 }}>
-          <div>
-            <h2 style={{ fontSize: 22, fontWeight: 700, color: 'white', margin: 0 }}>Istorik Transaksyon</h2>
-            <p style={{ color: '#8b949e', fontSize: 14, marginTop: 4 }}>
-              {transactions.length} transaksyon total
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-            <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} style={{
-              background: '#161b22', border: '1px solid #30363d', color: '#cbd5e1', padding: '10px 16px', borderRadius: 12, fontSize: 14
-            }}>
-              <option value="">Tout Tip</option>
-              {Object.keys(TX_CONFIG).map(k => <option key={k} value={k}>{TX_CONFIG[k].label}</option>)}
-            </select>
-
-            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} style={{
-              background: '#161b22', border: '1px solid #30363d', color: '#cbd5e1', padding: '10px 16px', borderRadius: 12, fontSize: 14
-            }}>
-              <option value="">Tout Estati</option>
-              <option value="completed">Konplè</option>
-              <option value="pending">An kous</option>
-              <option value="rejected">Rejte</option>
-            </select>
-
-            <select value={month} onChange={(e) => { setMonth(e.target.value); setPage(1); }} style={{
-              background: '#161b22', border: '1px solid #30363d', color: '#cbd5e1', padding: '10px 16px', borderRadius: 12, fontSize: 14
-            }}>
-              <option value="">Tout mwa</option>
-              {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-            </select>
-
-            <select value={year} onChange={(e) => { setYear(e.target.value); setPage(1); }} style={{
-              background: '#161b22', border: '1px solid #30363d', color: '#cbd5e1', padding: '10px 16px', borderRadius: 12, fontSize: 14
-            }}>
-              <option value="">Tout ane</option>
-              {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-          </div>
-        </div>
-
-        {/* Transactions List */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '100px 20px', color: '#64748b' }}>
-            <Clock size={42} style={{ animation: 'spin 1.4s linear infinite', marginBottom: 20 }} />
-            <p>Chajman transaksyon yo...</p>
-          </div>
-        ) : transactions.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '120px 20px', color: '#64748b' }}>
-            <Wallet size={70} style={{ opacity: 0.15, marginBottom: 20 }} />
-            <p style={{ fontSize: 17 }}>Pa gen transaksyon ankò</p>
-          </div>
-        ) : (
-          <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {paginatedTransactions.map((tx, i) => {
-                const cfg = TX_CONFIG[tx.type] || { label: tx.type, color: '#94a3b8', icon: null, sign: '' };
-                const st = STATUS_CONFIG[tx.status] || STATUS_CONFIG.completed;
-
-                return (
-                  <div key={tx.id || i} style={{
-                    background: '#161b22',
-                    border: '1px solid #1f2937',
-                    borderRadius: 20,
-                    padding: '22px 26px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 20,
-                    transition: 'all 0.25s ease'
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = '#22c55e'; e.currentTarget.style.transform = 'translateY(-3px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#1f2937'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                  >
-                    <div style={{ color: cfg.color }}>{cfg.icon}</div>
-
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 16.5, fontWeight: 600, color: 'white' }}>{cfg.label}</div>
-                      {tx.description && <div style={{ color: '#94a3b8', fontSize: 14, marginTop: 4 }}>{tx.description}</div>}
-                    </div>
-
-                    <div style={{ textAlign: 'right', minWidth: 150 }}>
-                      <div style={{ fontSize: 18.5, fontWeight: 700, color: cfg.color, fontFamily: 'JetBrains Mono, monospace' }}>
-                        {cfg.sign}{Number(tx.amount).toLocaleString()} HTG
-                      </div>
-                      <div style={{ fontSize: 13.5, color: '#64748b', marginTop: 4 }}>
-                        {new Date(tx.created_at).toLocaleDateString('fr-HT', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </div>
-                    </div>
-
-                    <div style={{
-                      padding: '8px 20px',
-                      borderRadius: 9999,
-                      fontSize: 13.5,
-                      fontWeight: 600,
-                      background: st.bg,
-                      color: st.color,
-                      whiteSpace: 'nowrap'
-                    }}>
-                      {st.label}
-                    </div>
-                  </div>
-                );
-              })}
+        {/* Transactions Section */}
+        <div style={{
+          animation: 'fadeInUp 0.6s ease-out 0.3s both'
+        }}>
+          {/* Header + Filters */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: window.innerWidth < 640 ? 'stretch' : 'center',
+            flexDirection: window.innerWidth < 640 ? 'column' : 'row',
+            gap: 16,
+            marginBottom: 20
+          }}>
+            <div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: 'white', margin: '0 0 4px' }}>
+                Istorik Transaksyon
+              </h2>
+              <p style={{ color: '#8b949e', fontSize: 13, margin: 0 }}>
+                {transactions.length} transaksyon total
+              </p>
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, marginTop: 40 }}>
-                <button
-                  disabled={page === 1}
-                  onClick={() => setPage(p => p - 1)}
-                  style={{
-                    width: 48, height: 48, borderRadius: 12,
-                    background: '#161b22', border: '1px solid #30363d',
-                    color: page === 1 ? '#475569' : '#cbd5e1',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: page === 1 ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <ChevronLeft size={20} />
-                </button>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              style={{
+                background: showFilters ? 'rgba(56,139,253,0.15)' : 'rgba(255,255,255,0.05)',
+                border: `1px solid ${showFilters ? 'rgba(56,139,253,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                borderRadius: 10,
+                color: showFilters ? '#388bfd' : '#8b949e',
+                padding: '10px 16px',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                transition: 'all 0.3s',
+                width: window.innerWidth < 640 ? '100%' : 'auto'
+              }}
+              onMouseEnter={(e) => {
+                if (!showFilters) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!showFilters) {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                }
+              }}
+            >
+              <Filter size={16} />
+              Filtè
+              <ChevronDown size={14} style={{ transition: 'all 0.3s', transform: showFilters ? 'rotate(180deg)' : 'rotate(0)' }} />
+            </button>
+          </div>
 
-                <span style={{ color: '#8b949e', fontFamily: 'JetBrains Mono, monospace', fontSize: 15 }}>
-                  Paj {page} sou {totalPages}
-                </span>
+          {/* Filter Dropdowns */}
+          {showFilters && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: 12,
+              padding: 16,
+              background: '#161b22',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 12,
+              marginBottom: 20,
+              animation: 'slideInDown 0.3s ease-out'
+            }}>
+              <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} style={{
+                background: '#0d1117',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#c9d1d9',
+                padding: '10px 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}>
+                <option value="">Tout Tip</option>
+                <option value="deposit">Depozit</option>
+                <option value="withdrawal">Retrè</option>
+                <option value="win">Gain Pari</option>
+                <option value="bet">Mise Pari</option>
+                <option value="bet_slip">Fich Kombi</option>
+                <option value="refund">Rembourseman</option>
+              </select>
 
-                <button
-                  disabled={page === totalPages}
-                  onClick={() => setPage(p => p + 1)}
-                  style={{
-                    width: 48, height: 48, borderRadius: 12,
-                    background: '#161b22', border: '1px solid #30363d',
-                    color: page === totalPages ? '#475569' : '#cbd5e1',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    cursor: page === totalPages ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <ChevronRight size={20} />
-                </button>
+              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} style={{
+                background: '#0d1117',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#c9d1d9',
+                padding: '10px 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}>
+                <option value="">Tout Estati</option>
+                <option value="completed">Konplè</option>
+                <option value="pending">An kous</option>
+                <option value="rejected">Rejte</option>
+                <option value="failed">Echèk</option>
+              </select>
+
+              <select value={month} onChange={(e) => { setMonth(e.target.value); setPage(1); }} style={{
+                background: '#0d1117',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#c9d1d9',
+                padding: '10px 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}>
+                <option value="">Tout mwa</option>
+                {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+              </select>
+
+              <select value={year} onChange={(e) => { setYear(e.target.value); setPage(1); }} style={{
+                background: '#0d1117',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#c9d1d9',
+                padding: '10px 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }}>
+                <option value="">Tout ane</option>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* Transactions List */}
+          {loading ? (
+            <div style={{
+              textAlign: 'center',
+              padding: window.innerWidth < 640 ? 60 : 100,
+              color: '#64748b'
+            }}>
+              <div style={{
+                width: 40,
+                height: 40,
+                border: '3px solid rgba(56,139,253,0.2)',
+                borderTopColor: '#388bfd',
+                borderRadius: '50%',
+                margin: '0 auto 16px',
+                animation: 'spin 1s linear infinite'
+              }} />
+              <p style={{ margin: 0, fontSize: 14 }}>Chajman transaksyon yo...</p>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: window.innerWidth < 640 ? 60 : 100,
+              color: '#64748b'
+            }}>
+              <Wallet size={48} style={{ opacity: 0.2, marginBottom: 16, margin: '0 auto 16px' }} />
+              <p style={{ fontSize: 15, margin: 0 }}>Pa gen transaksyon ankò</p>
+            </div>
+          ) : (
+            <>
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                marginBottom: 28
+              }}>
+                {paginatedTransactions.map((tx, i) => {
+                  const cfg = TX_CONFIG[tx.type] || { label: tx.type, color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.1)', icon: null, sign: '' };
+                  const st = STATUS_CONFIG[tx.status] || STATUS_CONFIG.completed;
+
+                  return (
+                    <div key={tx.id || i} style={{
+                      background: '#161b22',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 12,
+                      padding: window.innerWidth < 640 ? 16 : 20,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: window.innerWidth < 640 ? 12 : 16,
+                      transition: 'all 0.3s',
+                      animation: `fadeInUp 0.5s ease-out ${i * 0.05}s both`
+                    }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#1c2128';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#161b22';
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}>
+                      {/* Icon */}
+                      <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 10,
+                        background: cfg.bg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: cfg.color,
+                        flexShrink: 0
+                      }}>
+                        {cfg.icon}
+                      </div>
+
+                      {/* Content */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: 'white', marginBottom: 4 }}>
+                          {cfg.label}
+                        </div>
+                        {tx.description && (
+                          <div style={{ color: '#8b949e', fontSize: 12 }}>
+                            {tx.description}
+                          </div>
+                        )}
+                        <div style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                          {new Date(tx.created_at).toLocaleDateString('fr-HT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div style={{
+                        fontSize: window.innerWidth < 640 ? 13 : 15,
+                        fontWeight: 700,
+                        color: cfg.color,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        whiteSpace: 'nowrap',
+                        textAlign: 'right'
+                      }}>
+                        {cfg.sign}{Number(tx.amount).toLocaleString()}
+                      </div>
+
+                      {/* Status */}
+                      <div style={{
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        background: st.bg,
+                        color: st.color,
+                        whiteSpace: 'nowrap',
+                        display: window.innerWidth < 640 ? 'none' : 'block'
+                      }}>
+                        {st.label}
+                      </div>
+
+                      {/* Status Mobile */}
+                      {window.innerWidth < 640 && (
+                        <div style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: st.color
+                        }} />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            )}
-          </>
-        )}
 
-        {walletOpen && (
-          <WalletModal onClose={() => {
-            setWalletOpen(false);
-            refreshUser?.();
-            fetchTransactions();
-          }} />
-        )}
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: 16,
+                  padding: 20,
+                  background: '#161b22',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12
+                }}>
+                  <button
+                    disabled={page === 1}
+                    onClick={() => setPage(p => p - 1)}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 8,
+                      background: page === 1 ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      color: page === 1 ? '#475569' : '#8b949e',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: page === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.3s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (page !== 1) {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (page !== 1) {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                      }
+                    }}
+                  >
+                    ←
+                  </button>
+
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    fontSize: 13,
+                    color: '#8b949e',
+                    fontFamily: 'JetBrains Mono, monospace'
+                  }}>
+                    {page} / {totalPages}
+                  </div>
+
+                  <button
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => p + 1)}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 8,
+                      background: page === totalPages ? 'rgba(255,255,255,0.02)' : 'rgba(56,139,253,0.15)',
+                      border: `1px solid ${page === totalPages ? 'rgba(255,255,255,0.08)' : 'rgba(56,139,253,0.4)'}`,
+                      color: page === totalPages ? '#475569' : '#388bfd',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      transition: 'all 0.3s'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (page !== totalPages) {
+                        e.currentTarget.style.background = 'rgba(56,139,253,0.25)';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (page !== totalPages) {
+                        e.currentTarget.style.background = 'rgba(56,139,253,0.15)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }
+                    }}
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Deposit Modal */}
+      {depositOpen && (
+        <DepositModal onClose={() => {
+          setDepositOpen(false);
+          refreshUser?.();
+          fetchTransactions();
+        }} />
+      )}
+
+      {/* Withdraw Modal */}
+      {withdrawOpen && (
+        <WithdrawModal onClose={() => {
+          setWithdrawOpen(false);
+          refreshUser?.();
+          fetchTransactions();
+        }} />
+      )}
+
+      <style>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        .portfolio-container {
+          color: #c9d1d9;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+        }
+
+        @keyframes fadeInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes slideInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        select:focus {
+          outline: none;
+          border-color: rgba(56, 139, 253, 0.5) !important;
+          box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.1);
+        }
+
+        button:focus {
+          outline: none;
+        }
+      `}</style>
     </div>
   );
 }
