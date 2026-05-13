@@ -4,13 +4,13 @@ import { useAuth } from '../../context/AuthContext';
 import { walletAPI } from '../../api';
 import toast from 'react-hot-toast';
 
-interface Props { onClose: () => void; }
+interface Props { onClose: () => void; initialMode?: 'deposit' | 'withdraw'; }
 
 type Mode = 'menu' | 'deposit' | 'withdraw';
 
-export default function WalletModal({ onClose }: Props) {
+export default function WalletModal({ onClose, initialMode }: Props) {
   const { user, refresh } = useAuth();
-  const [mode, setMode] = useState<Mode>('menu');
+  const [mode, setMode] = useState<Mode>(initialMode ?? 'menu');
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);

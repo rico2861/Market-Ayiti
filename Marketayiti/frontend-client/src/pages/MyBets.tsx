@@ -17,7 +17,7 @@ const MONTHS = ['Janvye', 'Fevrye', 'Mas', 'Avril', 'Me', 'Jen', 'Jiyè', 'Out',
 const PAGE_SIZE = 6;
 
 export default function MyBets() {
-  const { user } = useAuth();
+  const { user, initialized } = useAuth();
   const { path } = useLocale();
   const { bets, loading } = useMyBets();
   const [filter, setFilter] = useState<'all' | 'active' | 'won' | 'lost'>('all');
@@ -25,6 +25,26 @@ export default function MyBets() {
   const [year, setYear] = useState('');
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+
+  if (!initialized || loading) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0d1117 0%, #161b22 100%)', paddingTop: 32, paddingBottom: 40 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+          <style>{`@keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }`}</style>
+          <div style={{ height: 36, width: 180, borderRadius: 8, marginBottom: 8, background: 'linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%)', backgroundSize: '400px 100%', animation: 'shimmer 1.4s infinite' }} />
+          <div style={{ height: 16, width: 260, borderRadius: 6, marginBottom: 28, background: 'linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%)', backgroundSize: '400px 100%', animation: 'shimmer 1.4s infinite' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 32 }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} style={{ height: 80, borderRadius: 12, background: 'linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%)', backgroundSize: '400px 100%', animation: 'shimmer 1.4s infinite' }} />
+            ))}
+          </div>
+          {[1,2,3,4,5].map(i => (
+            <div key={i} style={{ height: 88, borderRadius: 12, marginBottom: 12, background: 'linear-gradient(90deg,#21262d 25%,#30363d 50%,#21262d 75%)', backgroundSize: '400px 100%', animation: `shimmer 1.4s ${i * 0.07}s infinite` }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (

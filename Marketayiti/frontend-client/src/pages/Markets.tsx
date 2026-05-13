@@ -1,653 +1,387 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Search, Filter, X, Grid3x3, List, ChevronDown, TrendingUp, Zap } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
-import { marketsAPI } from '../api';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  Search, X, BarChart2, Vote, Trophy, Music, Users,
+  Grid3X3, Zap, BookOpen, Bitcoin, Cpu, Globe, Flame,
+  TrendingUp, Layers,
+} from 'lucide-react';
+import { useMarkets } from '../hooks/useMarkets';
+import { useWebSocket } from '../hooks/useRealtime';
+import { useAuth } from '../context/AuthContext';
+import { useLocale } from '../hooks/useLocale';
 import MarketCard from '../components/market/MarketCard';
-import { MarketGridSkeleton } from '../components/ui/Skeleton';
-import type { Market, MarketCategory } from '../types';
+import { marketsAPI, categoriesAPI } from '../api';
+import type { MarketFilters } from '../types';
 
-const SORTS = [
-  { v: 'volume', l_fr: 'Plus populaire', l_ht: 'Pi popilè' },
-  { v: 'new', l_fr: 'Plus récent', l_ht: 'Pi nouvo' },
-  { v: 'ending', l_fr: 'Se termine', l_ht: 'Prèske fini' },
-  { v: 'competitive', l_fr: 'Plus serré', l_ht: 'Pi konpetitif' },
-] as const;
-
-const CATEGORIES = [
-  { id: '', label_fr: 'Tous les marchés', label_ht: 'Tout machè yo' },
-  { id: 'politik', label_fr: 'Politique', label_ht: 'Politik' },
-  { id: 'spo', label_fr: 'Sports', label_ht: 'Spo' },
-  { id: 'ekonomi', label_fr: 'Économie', label_ht: 'Ekonomi' },
-  { id: 'kilti', label_fr: 'Culture', label_ht: 'Kilti' },
-  { id: 'sosyal', label_fr: 'Société', label_ht: 'Sosyal' },
-] as const;
-
-export default function Markets() {
-  const { t, i18n } = useTranslation();
-  const locale = i18n.language?.slice(0, 2) === 'fr' ? 'fr' : 'ht';
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchVal, setSearchVal] = useState(() => searchParams.get('q') || '');
-  const [category, setCategory] = useState((searchParams.get('category') as MarketCategory) || '');
-  const [sort, setSort] = useState(searchParams.get('sort') || 'volume');
-  const [view, setView] = useState<'grid' | 'list'>('grid');
-  const [sortOpen, setSortOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
-
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  const sortRef = useRef<HTMLDivElement>(null);
-  const filterRef = useRef<HTMLDivElement>(null);
-
-  const fetchMarkets = useCallback(async (params: { category?: string; search?: string; sort?: string }) => {
-    setLoading(true);
-    try {
-      const res = await marketsAPI.list({
-        category: params.category || undefined,
-        search: params.search || undefined,
-        sort: params.sort || 'volume',
-        status: 'active',
-        limit: 100
-      });
-      setMarkets(res.data);
-    } catch { } finally { setLoading(false); }
-  }, []);
-
-  // Sync from URL
+/* ─── viewport ─────────────────────────────────────────────────────────────── */
+function useVP() {
+  const [w, setW] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1280);
   useEffect(() => {
-    const urlQ = searchParams.get('q') || '';
-    const urlCat = (searchParams.get('category') || '') as MarketCategory | '';
-    const urlSort = searchParams.get('sort') || 'volume';
-    setSearchVal(urlQ);
-    setCategory(urlCat);
-    setSort(urlSort);
-    fetchMarkets({ category: urlCat, search: urlQ, sort: urlSort });
-  }, [searchParams.get('q'), searchParams.get('category'), searchParams.get('sort')]);
-
-  // Debounce search
-  const handleSearchChange = (val: string) => {
-    setSearchVal(val);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setSearchParams(prev => {
-        const n = new URLSearchParams(prev);
-        if (val.trim()) n.set('q', val.trim());
-        else n.delete('q');
-        return n;
-      }, { replace: true });
-    }, 300);
-  };
-
-  const updateSort = (s: string) => {
-    setSort(s);
-    setSortOpen(false);
-    setSearchParams(prev => {
-      const n = new URLSearchParams(prev);
-      if (s !== 'volume') n.set('sort', s);
-      else n.delete('sort');
-      return n;
-    }, { replace: true });
-  };
-
-  const updateCategory = (cat: string) => {
-    setCategory(cat as MarketCategory | '');
-    setFilterOpen(false);
-    setSearchParams(prev => {
-      const n = new URLSearchParams(prev);
-      if (cat) n.set('category', cat);
-      else n.delete('category');
-      return n;
-    }, { replace: true });
-  };
-
-  // Close dropdowns on outside click
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (sortRef.current && !sortRef.current.contains(e.target as Node)) setSortOpen(false);
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
-    };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
+    const fn = () => setW(window.innerWidth);
+    window.addEventListener('resize', fn, { passive: true });
+    return () => window.removeEventListener('resize', fn);
   }, []);
+  return { isMobile: w < 640, isTablet: w >= 640 && w < 1024, isDesktop: w >= 1024 };
+}
 
-  const currentSortLabel = SORTS.find(s => s.v === sort)?.[locale === 'fr' ? 'l_fr' : 'l_ht'] || 'Tri';
-  const currentCatLabel = CATEGORIES.find(c => c.id === category)?.[locale === 'fr' ? 'label_fr' : 'label_ht'];
+/* ─── categories config ───────────────────────────────────────────────────── */
+interface CategoryDef {
+  key: string;
+  labelFr: string;
+  labelHt: string;
+  color: string;
+  icon: React.ReactNode;
+  market_count?: number;
+}
 
+const ICON_MAP: Record<string, React.ReactNode> = {
+  all:        <Grid3X3 size={15} />,
+  politik:    <Vote size={15} />,
+  spo:        <Trophy size={15} />,
+  ekonomi:    <BarChart2 size={15} />,
+  kilti:      <Music size={15} />,
+  sosyal:     <Users size={15} />,
+  nouvo:      <Zap size={15} />,
+  lot:        <Layers size={15} />,
+  krypto:     <Bitcoin size={15} />,
+  teknoloji:  <Cpu size={15} />,
+  entènasyonal: <Globe size={15} />,
+  tendans:    <Flame size={15} />,
+  finans:     <TrendingUp size={15} />,
+};
+
+const ALL_CATEGORY: CategoryDef = {
+  key: 'all', labelFr: 'Tous', labelHt: 'Tout', color: '#3b82f6', icon: <Grid3X3 size={15} />,
+};
+
+type SortBy = 'trending' | 'newest' | 'ending' | 'volume';
+
+/* ─── skeleton card ───────────────────────────────────────────────────────── */
+function SkeletonCard() {
   return (
     <div style={{
-      maxWidth: 1400,
-      margin: '0 auto',
-      padding: '32px 16px'
+      background: '#0d1117', border: '1px solid rgba(255,255,255,.06)',
+      borderRadius: 14, padding: 15, display: 'flex', flexDirection: 'column', gap: 12,
     }}>
-      {/* Header */}
-      <div style={{
-        marginBottom: 40,
-        animation: 'fadeInDown 0.6s ease-out'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 16,
-          marginBottom: 12,
-          flexWrap: 'wrap'
-        }}>
-          <div>
-            <h1 style={{
-              fontSize: window.innerWidth < 640 ? 28 : 36,
-              fontWeight: 700,
-              color: 'white',
-              margin: 0,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10
-            }}>
-              <TrendingUp size={32} color="#388bfd" />
-              Markets
-            </h1>
-            <p style={{
-              fontSize: 14,
-              color: '#8b949e',
-              margin: '8px 0 0',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6
-            }}>
-              <Zap size={13} style={{ color: '#f85149' }} />
-              {markets.length} {locale === 'fr' ? 'marchés actifs' : 'machè aktif'}
-            </p>
-          </div>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+        <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 9, flexShrink: 0 }} />
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+          <div className="skeleton" style={{ height: 12, width: '85%' }} />
+          <div className="skeleton" style={{ height: 12, width: '60%', opacity: 0.7 }} />
         </div>
       </div>
-
-      {/* Controls Bar */}
-      <div style={{
-        display: 'flex',
-        gap: 12,
-        marginBottom: 24,
-        flexWrap: 'wrap',
-        alignItems: 'center',
-        animation: 'fadeInUp 0.6s ease-out 0.1s both'
-      }}>
-        {/* Search Input */}
-        <div style={{
-          position: 'relative',
-          flex: 1,
-          minWidth: window.innerWidth < 640 ? '100%' : 240
-        }}>
-          <Search size={14} style={{
-            position: 'absolute',
-            left: 14,
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#484f58',
-            pointerEvents: 'none'
-          }} />
-          <input
-            type="search"
-            value={searchVal}
-            onChange={e => handleSearchChange(e.target.value)}
-            placeholder={locale === 'fr' ? 'Rechercher...' : 'Chèche...'}
-            style={{
-              width: '100%',
-              background: '#161b22',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: 10,
-              padding: '10px 36px 10px 36px',
-              color: 'white',
-              fontSize: 13,
-              outline: 'none',
-              boxSizing: 'border-box',
-              fontFamily: 'inherit',
-              transition: 'all 0.3s'
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(56, 139, 253, 0.3)';
-              e.currentTarget.style.background = 'rgba(56, 139, 253, 0.05)';
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.background = '#161b22';
-            }}
-          />
-          {searchVal && (
-            <button onClick={() => handleSearchChange('')} style={{
-              position: 'absolute',
-              right: 10,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              color: '#8b949e',
-              cursor: 'pointer',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <X size={14} />
-            </button>
-          )}
-        </div>
-
-        {/* Category Filter Dropdown */}
-        <div ref={filterRef} style={{ position: 'relative' }}>
-          <button onClick={() => setFilterOpen(!filterOpen)} style={{
-            padding: '10px 14px',
-            background: '#161b22',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 10,
-            color: 'white',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontFamily: 'inherit',
-            transition: 'all 0.3s',
-            whiteSpace: 'nowrap'
-          }}
-            onMouseEnter={(e) => {
-              if (!filterOpen) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!filterOpen) {
-                e.currentTarget.style.background = '#161b22';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-              }
-            }}>
-            <Filter size={14} />
-            <span>{currentCatLabel || 'Catégorie'}</span>
-            <ChevronDown size={12} style={{
-              transition: 'transform 0.3s',
-              transform: filterOpen ? 'rotate(180deg)' : 'rotate(0)'
-            }} />
-          </button>
-
-          {filterOpen && (
-            <div style={{
-              position: 'absolute',
-              left: 0,
-              top: 'calc(100% + 8px)',
-              background: '#161b22',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 12,
-              padding: 8,
-              minWidth: 200,
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.6)',
-              zIndex: 100,
-              animation: 'slideInDown 0.3s ease-out'
-            }}>
-              {CATEGORIES.map(cat => (
-                <button key={cat.id} onClick={() => updateCategory(cat.id)} style={{
-                  display: 'block',
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  background: category === cat.id ? 'rgba(56, 139, 253, 0.15)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: 13,
-                  color: category === cat.id ? '#388bfd' : '#c9d1d9',
-                  fontFamily: 'inherit',
-                  fontWeight: category === cat.id ? 600 : 400,
-                  transition: 'all 0.3s',
-                  marginBottom: 4
-                }}
-                  onMouseEnter={(e) => {
-                    if (category !== cat.id) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (category !== cat.id) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}>
-                  {locale === 'fr' ? cat.label_fr : cat.label_ht}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Sort Dropdown */}
-        <div ref={sortRef} style={{ position: 'relative' }}>
-          <button onClick={() => setSortOpen(!sortOpen)} style={{
-            padding: '10px 14px',
-            background: '#161b22',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: 10,
-            color: 'white',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontFamily: 'inherit',
-            transition: 'all 0.3s',
-            whiteSpace: 'nowrap'
-          }}
-            onMouseEnter={(e) => {
-              if (!sortOpen) {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!sortOpen) {
-                e.currentTarget.style.background = '#161b22';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-              }
-            }}>
-            <span>{currentSortLabel}</span>
-            <ChevronDown size={12} style={{
-              transition: 'transform 0.3s',
-              transform: sortOpen ? 'rotate(180deg)' : 'rotate(0)'
-            }} />
-          </button>
-
-          {sortOpen && (
-            <div style={{
-              position: 'absolute',
-              right: 0,
-              top: 'calc(100% + 8px)',
-              background: '#161b22',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: 12,
-              padding: 8,
-              minWidth: 200,
-              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.6)',
-              zIndex: 100,
-              animation: 'slideInDown 0.3s ease-out'
-            }}>
-              {SORTS.map(s => (
-                <button key={s.v} onClick={() => updateSort(s.v)} style={{
-                  display: 'block',
-                  width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: 8,
-                  background: sort === s.v ? 'rgba(56, 139, 253, 0.15)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  fontSize: 13,
-                  color: sort === s.v ? '#388bfd' : '#c9d1d9',
-                  fontFamily: 'inherit',
-                  fontWeight: sort === s.v ? 600 : 400,
-                  transition: 'all 0.3s',
-                  marginBottom: 4
-                }}
-                  onMouseEnter={(e) => {
-                    if (sort !== s.v) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (sort !== s.v) {
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}>
-                  {locale === 'fr' ? s.l_fr : s.l_ht}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* View Toggle */}
-        <div style={{
-          display: 'flex',
-          background: '#161b22',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: 10,
-          padding: 4,
-          gap: 2
-        }}>
-          <button onClick={() => setView('grid')} style={{
-            padding: '8px 10px',
-            borderRadius: 8,
-            cursor: 'pointer',
-            background: view === 'grid' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-            border: 'none',
-            color: view === 'grid' ? 'white' : '#8b949e',
-            transition: 'all 0.3s',
-            display: 'flex',
-            alignItems: 'center'
-          }}
-            title="Grid view">
-            <Grid3x3 size={14} />
-          </button>
-          <button onClick={() => setView('list')} style={{
-            padding: '8px 10px',
-            borderRadius: 8,
-            cursor: 'pointer',
-            background: view === 'list' ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-            border: 'none',
-            color: view === 'list' ? 'white' : '#8b949e',
-            transition: 'all 0.3s',
-            display: 'flex',
-            alignItems: 'center'
-          }}
-            title="List view">
-            <List size={14} />
-          </button>
-        </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <div className="skeleton" style={{ flex: 1, height: 38, borderRadius: 9 }} />
+        <div className="skeleton" style={{ flex: 1, height: 38, borderRadius: 9, opacity: 0.7 }} />
       </div>
-
-      {/* Active Filters Chips */}
-      {(category || searchVal) && (
-        <div style={{
-          display: 'flex',
-          gap: 8,
-          marginBottom: 24,
-          flexWrap: 'wrap',
-          animation: 'slideInUp 0.3s ease-out'
-        }}>
-          {category && (
-            <button onClick={() => updateCategory('')} style={{
-              padding: '6px 12px 6px 14px',
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 500,
-              background: 'rgba(56, 139, 253, 0.15)',
-              border: '1px solid rgba(56, 139, 253, 0.3)',
-              color: '#388bfd',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              transition: 'all 0.3s'
-            }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(56, 139, 253, 0.25)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(56, 139, 253, 0.15)';
-              }}>
-              {currentCatLabel}
-              <X size={12} />
-            </button>
-          )}
-          {searchVal && (
-            <button onClick={() => handleSearchChange('')} style={{
-              padding: '6px 12px 6px 14px',
-              borderRadius: 20,
-              fontSize: 12,
-              fontWeight: 500,
-              background: 'rgba(56, 139, 253, 0.15)',
-              border: '1px solid rgba(56, 139, 253, 0.3)',
-              color: '#388bfd',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              transition: 'all 0.3s',
-              maxWidth: 200,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(56, 139, 253, 0.25)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(56, 139, 253, 0.15)';
-              }}>
-              "{searchVal}"
-              <X size={12} />
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Markets Grid/List */}
-      {loading && markets.length === 0 ? (
-        <MarketGridSkeleton count={12} />
-      ) : !loading && markets.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '80px 16px',
-          animation: 'fadeIn 0.5s ease-out'
-        }}>
-          <Search style={{
-            width: 48,
-            height: 48,
-            margin: '0 auto 16px',
-            opacity: 0.15,
-            color: '#8b949e'
-          }} />
-          <p style={{
-            fontSize: 15,
-            color: '#8b949e',
-            margin: '0 0 12px'
-          }}>
-            {searchVal
-              ? (locale === 'fr' ? `Aucun résultat pour "${searchVal}"` : `Pa gen rezilta pou "${searchVal}"`)
-              : (locale === 'fr' ? 'Aucun marché' : 'Pa gen machè')}
-          </p>
-          {searchVal && (
-            <button onClick={() => handleSearchChange('')} style={{
-              background: 'none',
-              border: 'none',
-              color: '#388bfd',
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-              transition: 'all 0.3s'
-            }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#1f6feb';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#388bfd';
-              }}>
-              {locale === 'fr' ? 'Effacer la recherche' : 'Efase rechèch'} →
-            </button>
-          )}
-        </div>
-      ) : (
-        <div style={{
-          display: view === 'grid' ? 'grid' : 'flex',
-          gridTemplateColumns: view === 'grid'
-            ? window.innerWidth < 640
-              ? '1fr'
-              : window.innerWidth < 1024
-                ? 'repeat(2, 1fr)'
-                : 'repeat(auto-fill, minmax(280px, 1fr))'
-            : undefined,
-          flexDirection: view === 'list' ? 'column' : undefined,
-          gap: 16,
-          position: 'relative'
-        }}>
-          {loading && (
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              zIndex: 5
-            }}>
-              <div style={{
-                width: 20,
-                height: 20,
-                border: '2px solid rgba(255, 255, 255, 0.1)',
-                borderTopColor: '#388bfd',
-                borderRadius: '50%',
-                animation: 'spin 0.8s linear infinite'
-              }} />
-            </div>
-          )}
-          {markets.map((m, i) => (
-            <div key={m.id} style={{ animation: `fadeInUp 0.5s ease-out ${i * 0.05}s both` }}>
-              <MarketCard market={m} index={i} />
-            </div>
-          ))}
-        </div>
-      )}
-
-      <style>{`
-        @keyframes fadeInDown {
-          from {
-            opacity: 0;
-            transform: translateY(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideInDown {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideInUp {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
+      <div className="skeleton" style={{ height: 4, borderRadius: 4 }} />
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MARKETS PAGE
+═══════════════════════════════════════════════════════════════════════════════ */
+export default function Markets() {
+  const { user } = useAuth();
+  const { locale } = useLocale();
+  const { isMobile, isTablet, isDesktop } = useVP();
+
+  // useMarkets drives category + status via URL params (server-side filtering)
+  const { markets, loading, filters, setCategory, setSort, applyMarketUpdate } = useMarkets({ limit: 500 });
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortByLocal] = useState<SortBy>('trending');
+
+  // Stable snapshot of markets for sort — updated at most once per 500ms to avoid
+  // re-sorting the full list on every WebSocket price tick
+  const sortTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [sortableMarkets, setSortableMarkets] = useState(markets);
+  useEffect(() => {
+    clearTimeout(sortTimerRef.current);
+    sortTimerRef.current = setTimeout(() => setSortableMarkets(markets), 500);
+    return () => clearTimeout(sortTimerRef.current);
+  }, [markets]);
+  const [favIds, setFavIds] = useState<Set<string>>(new Set());
+
+  // Derive selected category from URL param ('' = all)
+  const selectedCategory = filters.category || 'all';
+
+  // Dynamic categories from API
+  const [categories, setCategories] = useState<CategoryDef[]>([ALL_CATEGORY]);
+  useEffect(() => {
+    categoriesAPI.list()
+      .then(res => {
+        const apiCats: CategoryDef[] = (res.data.data ?? []).map(c => ({
+          key:      c.slug,
+          labelFr:  c.name_fr,
+          labelHt:  c.name,
+          color:    c.color,
+          icon:     ICON_MAP[c.slug] ?? <BarChart2 size={15} />,
+          market_count: c.market_count,
+        }));
+        setCategories([ALL_CATEGORY, ...apiCats]);
+      })
+      .catch(() => {});
+  }, []);
+
+  /* Load favorites */
+  useEffect(() => {
+    if (!user) { setFavIds(new Set()); return; }
+    marketsAPI.getFavorites()
+      .then(r => setFavIds(new Set(r.data.map((m: any) => m.id))))
+      .catch(() => {});
+  }, [user]);
+
+  /* WebSocket real-time price updates */
+  useWebSocket({
+    onMessage: (msg) => {
+      if (msg.type === 'market:update') {
+        applyMarketUpdate({
+          id: msg.market_id,
+          yes_prob: msg.yes_prob,
+          no_prob: msg.no_prob,
+          local_volume: msg.local_volume,
+          bet_count: msg.bet_count,
+        } as any);
+      }
+    },
+  });
+
+  /* Client-side: only search + sort (category already filtered server-side) */
+  const filtered = useMemo(() => {
+    let result = [...sortableMarkets];
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(m =>
+        m.title?.toLowerCase().includes(q) ||
+        m.description?.toLowerCase().includes(q)
+      );
+    }
+    switch (sortBy) {
+      case 'newest':
+        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'ending':
+        result.sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime());
+        break;
+      case 'volume':
+        result.sort((a, b) => (b.bet_count || 0) - (a.bet_count || 0));
+        break;
+      default: // trending
+        result.sort((a, b) => {
+          if (a.status !== b.status) return a.status === 'active' ? -1 : 1;
+          return (b.bet_count || 0) - (a.bet_count || 0);
+        });
+    }
+    return result;
+  }, [sortableMarkets, searchQuery, sortBy]);
+
+  const handleToggleFav = (marketId: string) => {
+    if (!user) return;
+    const next = !favIds.has(marketId);
+    setFavIds(prev => { const s = new Set(prev); if (next) s.add(marketId); else s.delete(marketId); return s; });
+    marketsAPI.toggleFavorite(marketId).catch(() => {
+      setFavIds(prev => { const s = new Set(prev); if (!next) s.add(marketId); else s.delete(marketId); return s; });
+    });
+  };
+
+  const handleCategoryClick = (key: string) => {
+    setCategory(key === 'all' ? '' : key as any);
+  };
+
+  const handleSortChange = (v: SortBy) => {
+    setSortByLocal(v);
+    const apiSort: Record<SortBy, MarketFilters['sort']> = {
+      trending: 'volume', newest: 'new', ending: 'ending', volume: 'volume',
+    };
+    setSort(apiSort[v]);
+  };
+
+  const gridCols = isDesktop ? 'repeat(3,1fr)' : isTablet ? 'repeat(2,1fr)' : '1fr';
+
+  return (
+    <>
+      <style>{`
+        @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes pulse  { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+        .am-up { animation: fadeUp .35s ease forwards; }
+        .pulse-sk { animation: pulse 1.8s ease-in-out infinite; }
+
+        .cat-bar::-webkit-scrollbar { display: none; }
+        .cat-bar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 99px; }
+      `}</style>
+
+      <div style={{ background: '#090d12', minHeight: '100vh' }}>
+        <div style={{
+          maxWidth: 1440, margin: '0 auto',
+          padding: isMobile ? '20px 14px' : isTablet ? '28px 22px' : '36px 40px',
+        }}>
+
+          {/* ═══ HEADER ═══ */}
+          <div style={{ marginBottom: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 24 }}>
+              <div>
+                <h1 style={{ fontSize: isMobile ? 22 : 30, fontWeight: 800, color: 'white', margin: '0 0 6px', letterSpacing: '-.02em' }}>
+                  {locale === 'fr' ? 'Tous les marchés' : 'Tout machè yo'}
+                </h1>
+                <p style={{ fontSize: 13, color: '#4b6376', margin: 0 }}>
+                  {loading
+                    ? (locale === 'fr' ? 'Chargement…' : 'Ap chaje…')
+                    : locale === 'fr'
+                      ? `${filtered.length} marché${filtered.length !== 1 ? 's' : ''} affiché${filtered.length !== 1 ? 's' : ''}`
+                      : `${filtered.length} machè afiche`}
+                </p>
+              </div>
+
+              {/* Sort + Search row */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flex: isDesktop ? 'unset' : 1, justifyContent: 'flex-end' }}>
+                {!isMobile && (
+                  <select
+                    value={sortBy}
+                    onChange={e => handleSortChange(e.target.value as SortBy)}
+                    style={{
+                      padding: '9px 32px 9px 12px', borderRadius: 10,
+                      border: '1px solid rgba(255,255,255,.1)',
+                      background: 'rgba(255,255,255,.04)', color: '#c9d1d9',
+                      fontSize: 13, fontFamily: 'inherit', cursor: 'pointer',
+                      appearance: 'none', colorScheme: 'dark',
+                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%236b7280' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E")`,
+                      backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center',
+                    }}
+                  >
+                    <option value="trending">{locale === 'fr' ? 'Tendance' : 'Tandans'}</option>
+                    <option value="newest">{locale === 'fr' ? 'Nouveau' : 'Nouvo'}</option>
+                    <option value="ending">{locale === 'fr' ? 'Fin proche' : 'Fin prèch'}</option>
+                    <option value="volume">Volume</option>
+                  </select>
+                )}
+              </div>
+            </div>
+
+            {/* Search bar */}
+            <div style={{ position: 'relative', marginBottom: 20 }}>
+              <Search style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', width: 16, height: 16, color: '#4b6376', pointerEvents: 'none' }} />
+              <input
+                type="text"
+                placeholder={locale === 'fr' ? 'Rechercher un marché…' : 'Chèche yon machè…'}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%', padding: '11px 40px 11px 40px',
+                  borderRadius: 12, border: '1px solid rgba(255,255,255,.08)',
+                  background: 'rgba(255,255,255,.03)', color: 'white',
+                  fontSize: 14, fontFamily: 'inherit', outline: 'none',
+                  transition: 'border .15s, background .15s',
+                }}
+                onFocus={e => { e.target.style.border = '1px solid rgba(59,130,246,.35)'; e.target.style.background = 'rgba(59,130,246,.05)'; }}
+                onBlur={e => { e.target.style.border = '1px solid rgba(255,255,255,.08)'; e.target.style.background = 'rgba(255,255,255,.03)'; }}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, display: 'flex' }}>
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+
+            {/* ═══ CATEGORY BAR ═══ */}
+            <div
+              className={isDesktop ? '' : 'cat-bar'}
+              style={{
+                display: 'flex', gap: 6,
+                flexWrap: isDesktop ? 'wrap' : 'nowrap',
+                overflowX: isDesktop ? 'visible' : 'auto',
+                WebkitOverflowScrolling: 'touch', paddingBottom: 2,
+              }}
+            >
+              {categories.map(cat => {
+                const active = selectedCategory === cat.key;
+                return (
+                  <button
+                    key={cat.key}
+                    onClick={() => handleCategoryClick(cat.key)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '8px 14px', borderRadius: 99, whiteSpace: 'nowrap',
+                      border: active ? `1.5px solid ${cat.color}` : '1px solid rgba(255,255,255,.09)',
+                      background: active ? `${cat.color}1a` : 'rgba(255,255,255,.03)',
+                      color: active ? cat.color : '#6b7280',
+                      fontWeight: active ? 700 : 500, fontSize: 13,
+                      cursor: 'pointer', transition: 'all .15s',
+                      fontFamily: 'inherit', flexShrink: 0,
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', opacity: active ? 1 : 0.7 }}>
+                      {cat.icon}
+                    </span>
+                    {locale === 'fr' ? cat.labelFr : cat.labelHt}
+                    {cat.market_count != null && cat.market_count > 0 && (
+                      <span style={{
+                        fontSize: 10, fontWeight: 700,
+                        background: active ? cat.color : 'rgba(255,255,255,.08)',
+                        color: active ? '#000' : '#8b949e',
+                        borderRadius: 99, padding: '1px 7px',
+                      }}>
+                        {cat.market_count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ═══ MARKETS GRID ═══ */}
+          {loading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: isMobile ? 12 : 16 }}>
+              {Array.from({ length: isMobile ? 2 : 9 }).map((_, i) => (
+                <div key={i} className="pulse-sk" style={{ animationDelay: `${i * 80}ms` }}>
+                  <SkeletonCard />
+                </div>
+              ))}
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{
+              textAlign: 'center', padding: isMobile ? '60px 20px' : '100px 40px',
+              background: 'rgba(255,255,255,.02)', borderRadius: 16,
+              border: '1px dashed rgba(255,255,255,.07)',
+            }}>
+              <BookOpen style={{ width: 44, height: 44, margin: '0 auto 16px', opacity: 0.13 }} />
+              <p style={{ fontSize: 15, color: '#4b6376', fontWeight: 600, margin: '0 0 8px' }}>
+                {locale === 'fr' ? 'Aucun marché trouvé' : 'Pa gen machè jwenn'}
+              </p>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    marginTop: 12, padding: '8px 20px', borderRadius: 8,
+                    border: '1px solid rgba(59,130,246,.3)', background: 'rgba(59,130,246,.08)',
+                    color: '#3b82f6', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  {locale === 'fr' ? 'Effacer la recherche' : 'Efase rechèch'}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: isMobile ? 12 : 16 }}>
+              {filtered.map((market, i) => (
+                <div key={market.id} className="am-up" style={{ animationDelay: `${Math.min(i * 35, 280)}ms` }}>
+                  <MarketCard
+                    market={market}
+                    index={i}
+                    isFavorited={favIds.has(market.id)}
+                    onToggleFavorite={() => handleToggleFav(market.id)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

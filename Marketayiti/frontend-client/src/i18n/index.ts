@@ -18,24 +18,32 @@ export const LOCALE_NAMES: Record<Locale, string> = {
  */
 export const ROUTES: Record<Locale, Record<string, string>> = {
   ht: {
-    home:       '',
-    markets:    'markets',     // spec: not 'machè'
-    market:     'market',      // detail prefix
-    login:      'konekte',
-    register:   'enskri',
-    portfolio:  'pòtfolyo',
-    myBets:     'pari-mwen',
-    profile:    'pwofil'
+    home: '',
+    markets: 'markets',     // spec: not 'machè'
+    market: 'market',      // detail prefix
+    login: 'konekte',
+    register: 'enskri',
+    portfolio: 'pòtfolyo',
+    myBets: 'pari-mwen',
+    profile: 'pwofil',
+    notifications: 'notifikasyon',
+    settings: 'paramèt',
+    help: 'èd',
+    reset: 'reyinisyalize'
   },
   fr: {
-    home:       '',
-    markets:    'markets',
-    market:     'market',
-    login:      'connexion',
-    register:   'inscription',
-    portfolio:  'portefeuille',
-    myBets:     'mes-paris',
-    profile:    'profil'
+    home: '',
+    markets: 'markets',
+    market: 'market',
+    login: 'connexion',
+    register: 'inscription',
+    portfolio: 'portefeuille',
+    myBets: 'mes-paris',
+    profile: 'profil',
+    notifications: 'notifications',
+    settings: 'parametres',
+    help: 'aide',
+    reset: 'reinitialiser'
   }
 };
 

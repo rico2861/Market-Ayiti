@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDebouncedCallback } from 'use-debounce';
 import { marketsAPI } from '../api';
+import { useWebSocket } from './useRealtime';
 import type { Market, MarketCategory, MarketFilters } from '../types';
 
 interface UseMarketsResult {
@@ -47,7 +48,7 @@ export function useMarkets(initial: Partial<MarketFilters> = {}): UseMarketsResu
         search:   filters.search   || undefined,
         status:   filters.status   || 'active',
         sort:     filters.sort     || 'volume',
-        limit: 50
+        limit:    (initial as any).limit ?? 500,
       });
       setMarkets(res.data);
     } catch (e: any) {
@@ -61,6 +62,16 @@ export function useMarkets(initial: Partial<MarketFilters> = {}): UseMarketsResu
   }, [filters.category, filters.search, filters.status, filters.sort]);
 
   useEffect(() => { fetchMarkets(); }, [fetchMarkets]);
+
+  // Real-time: refresh market list when a new market is added
+  useWebSocket({
+    channels: ['markets'],
+    onMessage: (msg) => {
+      if (msg.type === 'market:new' || msg.type === 'polymarket:sync') {
+        fetchMarkets();
+      }
+    },
+  });
 
   const debouncedSearch = useDebouncedCallback((value: string) => {
     setSearchParams(prev => {

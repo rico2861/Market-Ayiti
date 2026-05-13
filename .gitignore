@@ -1,0 +1,29 @@
+# Database
+Marketayiti/backend/data/*.db
+Marketayiti/backend/data/*.db-journal
+
+# Environment variables — NEVER commit real secrets
+.env
+*.env
+.env.local
+.env.production
+.env.staging
+Marketayiti/backend/.env
+
+# Node
+node_modules/
+*/node_modules/
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/build/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

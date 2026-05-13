@@ -10,10 +10,12 @@ type WSMessage =
       slug: string;
       yes_prob: number;
       no_prob: number;
-      total_volume: number;
+      local_volume: number;
       bet_count: number;
     }
-  | { type: 'market:resolved'; market_id: string; resolution: 'yes' | 'no' };
+  | { type: 'market:resolved'; market_id: string; resolution: 'yes' | 'no' }
+  | { type: 'market:new'; data: { polymarket_id: string; title: string; category: string } }
+  | { type: 'polymarket:sync'; data: { created: number; updated: number; resolved: number } };
 
 interface UseWebSocketOptions {
   channels?: string[];
@@ -108,7 +110,7 @@ export function useMarketRealtime(
   onUpdate: (data: {
     yes_prob: number;
     no_prob: number;
-    total_volume: number;
+    local_volume: number;
     bet_count: number;
   }) => void
 ) {
@@ -119,7 +121,7 @@ export function useMarketRealtime(
         onUpdate({
           yes_prob:     msg.yes_prob,
           no_prob:      msg.no_prob,
-          total_volume: msg.total_volume,
+          local_volume: msg.local_volume,
           bet_count:    msg.bet_count
         });
       }

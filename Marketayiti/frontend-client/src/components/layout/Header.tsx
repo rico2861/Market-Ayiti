@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, LogOut, User, TrendingUp, Menu, X,
-  ChevronDown, Wallet, Home, BarChart2, Award, Globe
+  ChevronDown, Wallet, Home, BarChart2, Award, Globe,
+  Vote, Trophy, Music, Users, Grid3X3, Layers, Flame, Bell, Gift,
+  CheckCheck,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
@@ -10,15 +12,23 @@ import { useLocale } from '../../hooks/useLocale';
 import { SUPPORTED_LOCALES, LOCALE_NAMES } from '../../i18n';
 import type { MarketCategory } from '../../types';
 import WalletModal from '../wallet/WalletModal';
+import { notificationsAPI } from '../../api';
 import clsx from 'clsx';
 
-const CAT_EMOJI: Record<string, string> = {
-  '': '🌐', nouvo: '🔥', politik: '🗳️', spo: '⚽', ekonomi: '💰', kilti: '🎭', sosyal: '🏘️', lot: '📌'
+const CAT_ICONS: Record<string, React.ReactNode> = {
+  '':       <Layers size={11} />,
+  nouvo:    <Flame size={11} />,
+  politik:  <Vote size={11} />,
+  spo:      <Trophy size={11} />,
+  ekonomi:  <BarChart2 size={11} />,
+  kilti:    <Music size={11} />,
+  sosyal:   <Users size={11} />,
+  lot:      <Grid3X3 size={11} />,
 };
 
 export default function Header() {
-  const { t, i18n } = useTranslation();
-  const { user, logout } = useAuth();
+  const { t } = useTranslation();
+  const { user, logout, initialized } = useAuth();
   const { locale, changeLocale, path } = useLocale();
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,11 +39,38 @@ export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropOpen, setDropOpen] = useState(false);
   const [walletOpen, setWalletOpen] = useState(false);
+  const [walletMode, setWalletMode] = useState<'deposit' | 'withdraw'>('deposit');
+
+  const openWallet = (mode: 'deposit' | 'withdraw' = 'deposit') => { setWalletMode(mode); setWalletOpen(true); };
   const [langOpen, setLangOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchVal, setSearchVal] = useState(searchParams.get('q') || '');
   const [searchFocus, setSearchFocus] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(64);
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
+
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+  const [notifs, setNotifs] = useState<any[]>([]);
+  const [unread, setUnread] = useState(0);
+
+  const fetchNotifs = useCallback(async () => {
+    if (!user) return;
+    try {
+      const r = await notificationsAPI.list(10);
+      setNotifs(r.data.notifications ?? []);
+      setUnread(r.data.unread ?? 0);
+    } catch {}
+  }, [user]);
+
+  useEffect(() => { fetchNotifs(); }, [fetchNotifs]);
+
+  const handleOpenNotif = () => {
+    setNotifOpen(v => !v);
+    if (!notifOpen) fetchNotifs(); // refresh on open
+  };
 
   const dropRef = useRef<HTMLDivElement>(null);
   const langRef = useRef<HTMLDivElement>(null);
@@ -56,6 +93,7 @@ export default function Header() {
     const h = (e: MouseEvent) => {
       if (dropRef.current && !dropRef.current.contains(e.target as Node)) setDropOpen(false);
       if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -67,7 +105,11 @@ export default function Header() {
     return () => window.removeEventListener('scroll', h);
   }, []);
 
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => { setMobileOpen(false); setSearchOpen(false); }, [location.pathname]);
+
+  useEffect(() => {
+    if (searchOpen) setTimeout(() => mobileSearchRef.current?.focus(), 80);
+  }, [searchOpen]);
 
   useEffect(() => {
     if (mobileOpen) document.body.classList.add('no-scroll');
@@ -124,14 +166,16 @@ export default function Header() {
   const isActive = (p: string) => location.pathname === p;
   const onMarketsOrHome = location.pathname === path('home') || location.pathname.startsWith(path('markets'));
 
+  const fr = locale === 'fr';
   const CATS: { id: MarketCategory | ''; label: string }[] = [
-    { id: '', label: t('categories.all') },
-    { id: 'politik', label: t('categories.politik') },
-    { id: 'spo', label: t('categories.spo') },
-    { id: 'ekonomi', label: t('categories.ekonomi') },
-    { id: 'kilti', label: t('categories.kilti') },
-    { id: 'sosyal', label: t('categories.sosyal') },
-    { id: 'lot', label: t('categories.lot') },
+    { id: '', label: fr ? 'Tous' : 'Tout' },
+    { id: 'nouvo', label: fr ? 'Actualité' : 'Nouvo' },
+    { id: 'politik', label: fr ? 'Politique' : 'Politik' },
+    { id: 'spo', label: fr ? 'Sport' : 'Spò' },
+    { id: 'ekonomi', label: fr ? 'Économie' : 'Ekonomi' },
+    { id: 'kilti', label: fr ? 'Culture' : 'Kilti' },
+    { id: 'sosyal', label: fr ? 'Social' : 'Sosyal' },
+    { id: 'lot', label: fr ? 'Autre' : 'Lòt' },
   ];
 
   useEffect(() => {
@@ -164,7 +208,7 @@ export default function Header() {
 
   return (
     <>
-      {walletOpen && user && <WalletModal onClose={() => setWalletOpen(false)} />}
+      {walletOpen && user && <WalletModal initialMode={walletMode} onClose={() => setWalletOpen(false)} />}
 
       <header ref={headerRef} className="fixed top-0 left-0 right-0 z-40"
         style={{
@@ -201,110 +245,66 @@ export default function Header() {
               ))}
             </nav>
 
-            {/* Modern Search — Desktop only */}
-            <form onSubmit={handleSearchSubmit} style={{ flex: 1, maxWidth: 500 }} className="hidden lg:flex">
-              <div style={{ position: 'relative', width: '100%' }}>
-                <div style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: '3px',
-                  background: searchFocus ? 'linear-gradient(180deg, #3b82f6, #1d4ed8)' : 'transparent',
-                  borderRadius: '8px 0 0 8px',
-                  transition: 'all .3s ease'
-                }} />
-
+            {/* Search — Desktop */}
+            <form onSubmit={handleSearchSubmit} style={{ flex: 1, minWidth: 0, maxWidth: 440 }} className="hidden lg:flex">
+              <div style={{
+                position: 'relative', width: '100%', display: 'flex', alignItems: 'center',
+                borderRadius: 12,
+                background: searchFocus ? 'rgba(56,139,253,0.06)' : 'rgba(255,255,255,0.05)',
+                border: `1.5px solid ${searchFocus ? 'rgba(56,139,253,0.6)' : 'rgba(255,255,255,0.1)'}`,
+                boxShadow: searchFocus ? '0 0 0 3px rgba(56,139,253,0.12)' : 'none',
+                transition: 'border-color .2s, box-shadow .2s, background .2s',
+              }}>
                 <Search size={14} style={{
-                  position: 'absolute',
-                  left: 14,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: searchFocus ? '#3b82f6' : '#484f58',
-                  pointerEvents: 'none',
-                  transition: 'color .3s ease'
+                  position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)',
+                  color: searchFocus ? '#388bfd' : '#484f58',
+                  pointerEvents: 'none', transition: 'color .2s', flexShrink: 0,
                 }} />
-
-                <input
-                  ref={searchRef}
-                  type="search"
-                  value={searchVal}
+                <input ref={searchRef} type="search" value={searchVal}
                   onChange={e => handleSearchChange(e.target.value)}
                   onFocus={() => setSearchFocus(true)}
                   onBlur={() => setSearchFocus(false)}
                   placeholder={t('nav.search_placeholder')}
                   style={{
-                    width: '100%',
-                    background: searchFocus ? 'rgba(59,130,246,0.05)' : '#21262d',
-                    border: searchFocus ? '1.5px solid #3b82f6' : '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: 8,
-                    padding: '9px 36px 9px 38px',
-                    color: 'white',
-                    fontSize: 13,
-                    outline: 'none',
-                    fontFamily: 'inherit',
-                    transition: 'all .2s ease',
-                    boxShadow: searchFocus ? '0 0 0 3px rgba(59,130,246,0.1)' : 'none'
+                    width: '100%', background: 'transparent', border: 'none', borderRadius: 12,
+                    padding: '8px 36px 8px 36px', color: 'white', fontSize: 13,
+                    outline: 'none', fontFamily: 'inherit',
                   }}
                 />
-
-                {!searchVal && (
+                {!searchVal ? (
                   <span style={{
-                    position: 'absolute',
-                    right: 10,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 4,
-                    padding: '2px 6px',
-                    fontSize: 11,
-                    color: '#484f58',
-                    pointerEvents: 'none',
-                    fontFamily: 'monospace'
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 5, padding: '1px 6px', fontSize: 10, color: '#484f58',
+                    pointerEvents: 'none', fontFamily: 'monospace',
                   }}>/</span>
-                )}
-
-                {searchVal && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchVal('');
-                      if (location.pathname.includes('markets')) {
-                        setSearchParams(prev => { const n = new URLSearchParams(prev); n.delete('q'); return n; }, { replace: true });
-                      }
-                    }}
+                ) : (
+                  <button type="button" onClick={() => { setSearchVal(''); if (location.pathname.includes('markets')) setSearchParams(prev => { const n = new URLSearchParams(prev); n.delete('q'); return n; }, { replace: true }); }}
                     style={{
-                      position: 'absolute',
-                      right: 10,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'rgba(255,255,255,0.08)',
-                      border: 'none',
-                      borderRadius: 4,
-                      padding: '4px 6px',
-                      cursor: 'pointer',
-                      color: '#8b949e',
-                      display: 'flex',
-                      alignItems: 'center',
-                      transition: 'all .2s ease'
-                    }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.12)';
-                      (e.currentTarget as HTMLElement).style.color = 'white';
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)';
-                      (e.currentTarget as HTMLElement).style.color = '#8b949e';
-                    }}
-                  >
-                    <X size={14} />
+                      position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                      background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: '50%',
+                      width: 20, height: 20, cursor: 'pointer', color: '#8b949e',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                    <X size={11} />
                   </button>
                 )}
               </div>
             </form>
 
             <div style={{ flex: 1 }} />
+
+            {/* Search icon — Mobile/tablet only (lg:hidden) */}
+            <button onClick={() => setSearchOpen(true)} className="lg:hidden"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 36, height: 36,
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 10, cursor: 'pointer', color: '#8b949e', flexShrink: 0,
+                transition: 'all .2s ease',
+              }}>
+              <Search size={16} />
+            </button>
 
             {/* Right side */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -352,25 +352,126 @@ export default function Header() {
                 )}
               </div>
 
+              {/* Notification bell */}
+              {user && (
+                <div ref={notifRef} style={{ position: 'relative' }}>
+                  <button
+                    onClick={handleOpenNotif}
+                    style={{
+                      position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      width: 34, height: 34,
+                      background: notifOpen ? 'rgba(56,139,253,0.12)' : 'rgba(255,255,255,0.04)',
+                      border: `1px solid ${notifOpen ? 'rgba(56,139,253,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                      borderRadius: 10, cursor: 'pointer', color: notifOpen ? '#388bfd' : '#8b949e',
+                      transition: 'all .2s ease',
+                    }}>
+                    <Bell size={15} />
+                    {unread > 0 && (
+                      <span style={{
+                        position: 'absolute', top: -4, right: -4,
+                        minWidth: 16, height: 16, borderRadius: 8,
+                        background: '#f85149', color: 'white',
+                        fontSize: 9, fontWeight: 800, lineHeight: '16px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '0 4px', border: '2px solid #0d1117',
+                      }}>
+                        {unread > 9 ? '9+' : unread}
+                      </span>
+                    )}
+                  </button>
+                  {notifOpen && (
+                    <div style={{
+                      position: 'fixed',
+                      right: 8, top: (notifRef.current?.getBoundingClientRect().bottom ?? 56) + 8,
+                      background: '#161b22', border: '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: 16, padding: 0, zIndex: 200,
+                      width: 'min(340px, calc(100vw - 16px))',
+                      boxShadow: '0 20px 60px rgba(0,0,0,0.7)',
+                      overflow: 'hidden',
+                    }}>
+                      <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>
+                          {fr ? 'Notifications' : 'Notifikasyon'}
+                        </span>
+                        <Link to={path('notifications')} onClick={() => setNotifOpen(false)}
+                          style={{ fontSize: 11, color: '#388bfd', fontWeight: 600, textDecoration: 'none' }}>
+                          {fr ? 'Tout voir →' : 'Wè tout →'}
+                        </Link>
+                      </div>
+                      <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+                        {notifs.filter((n: any) => !n.read).length === 0 ? (
+                          <div style={{ padding: '28px 16px', textAlign: 'center' }}>
+                            <Bell size={24} style={{ margin: '0 auto 10px', display: 'block', opacity: 0.12, color: '#8b949e' }} />
+                            <p style={{ fontSize: 12, color: '#484f58', margin: 0 }}>
+                              {fr ? 'Aucune notification' : 'Pa gen notifikasyon'}
+                            </p>
+                          </div>
+                        ) : notifs.filter((n: any) => !n.read).map((n: any) => (
+                          <button key={n.id}
+                            onClick={() => {
+                              notificationsAPI.markRead(n.id).catch(() => {});
+                              setNotifs(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+                              setUnread(u => Math.max(0, u - 1));
+                            }}
+                            style={{
+                              width: '100%', textAlign: 'left', cursor: 'pointer',
+                              padding: '12px 16px',
+                              borderBottom: '1px solid rgba(255,255,255,0.04)',
+                              background: 'rgba(56,139,253,0.04)',
+                              display: 'flex', gap: 10, alignItems: 'flex-start',
+                              border: 'none', fontFamily: 'inherit',
+                            }}>
+                            <div style={{
+                              width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+                              background: n.type === 'cashback' ? 'rgba(168,85,247,0.15)' : n.type === 'bonus' ? 'rgba(168,85,247,0.15)' : n.type === 'win' || n.type === 'win_bonus' ? 'rgba(63,185,80,0.15)' : 'rgba(56,139,253,0.12)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: n.type === 'cashback' || n.type === 'bonus' ? '#c084fc' : n.type === 'win' || n.type === 'win_bonus' ? '#3fb950' : '#388bfd',
+                            }}>
+                              {(n.type === 'cashback' || n.type === 'bonus') ? <Gift size={14} /> : <Bell size={14} />}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: 12, fontWeight: 600, color: 'white', margin: '0 0 2px' }}>{n.title}</p>
+                              <p style={{ fontSize: 11, color: '#8b949e', margin: 0, lineHeight: 1.4 }}>{n.message}</p>
+                            </div>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#388bfd', flexShrink: 0, marginTop: 5 }} />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {user ? (
                 <>
-                  {/* Balance pill */}
-                  <button onClick={() => setWalletOpen(true)}
-                    className="hidden sm:flex"
+                  {/* Wallet pill — responsive: compact on mobile, full on sm+ */}
+                  <button onClick={() => openWallet('deposit')}
                     style={{
-                      alignItems: 'center', gap: 5, padding: '6px 10px',
-                      background: 'rgba(63,185,80,0.1)', border: '1px solid rgba(63,185,80,0.2)',
-                      borderRadius: 8, cursor: 'pointer', color: '#3fb950', fontSize: 12, fontWeight: 700,
-                      fontFamily: 'JetBrains Mono,monospace', transition: 'all .2s ease'
+                      display: 'flex', alignItems: 'center', gap: 5, padding: '5px 8px',
+                      background: 'rgba(22,199,132,0.08)', border: '1px solid rgba(22,199,132,0.2)',
+                      borderRadius: 10, cursor: 'pointer', transition: 'all .2s ease',
+                      fontFamily: 'inherit', flexShrink: 0, position: 'relative',
                     }}
-                    onMouseEnter={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(63,185,80,0.2)';
-                    }}
-                    onMouseLeave={e => {
-                      (e.currentTarget as HTMLElement).style.background = 'rgba(63,185,80,0.1)';
-                    }}>
-                    <Wallet size={12} />
-                    {Math.floor(user.balance).toLocaleString()} HTG
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(22,199,132,0.15)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(22,199,132,0.08)'; }}>
+                    <Wallet size={13} color="#16c784" />
+                    {/* Balance — always visible */}
+                    <span style={{ color: '#16c784', fontSize: 12, fontWeight: 700, fontFamily: 'JetBrains Mono,monospace', whiteSpace: 'nowrap' }}>
+                      {Math.floor(user.balance).toLocaleString()}
+                      <span style={{ opacity: 0.6, fontSize: 10, marginLeft: 2 }}>HTG</span>
+                    </span>
+                    {/* Bonus badge — always visible */}
+                    {(user.bonus_balance ?? 0) > 0 && (
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center',
+                        padding: '2px 6px', borderRadius: 7,
+                        background: 'rgba(168,85,247,0.18)', color: '#c084fc',
+                        fontSize: 10, fontWeight: 700, border: '1px solid rgba(168,85,247,0.28)',
+                        fontFamily: 'JetBrains Mono,monospace', whiteSpace: 'nowrap',
+                      }}>
+                        +{Math.floor(user.bonus_balance)}B
+                      </span>
+                    )}
                   </button>
 
                   {/* User dropdown */}
@@ -407,8 +508,19 @@ export default function Header() {
                       }}>
                         <div style={{ padding: '8px 12px 10px', borderBottom: '1px solid rgba(255,255,255,0.06)', marginBottom: 6 }}>
                           <div style={{ fontSize: 13, fontWeight: 700, color: 'white' }}>@{user.username}</div>
-                          <div style={{ fontSize: 12, color: '#3fb950', fontFamily: 'JetBrains Mono,monospace', marginTop: 2 }}>
-                            {user.balance.toLocaleString()} HTG
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                            <span style={{ fontSize: 12, color: '#16c784', fontFamily: 'JetBrains Mono,monospace' }}>
+                              {user.balance.toLocaleString()} HTG
+                            </span>
+                            {(user.bonus_balance ?? 0) > 0 && (
+                              <span style={{
+                                padding: '1px 6px', borderRadius: 6,
+                                background: 'rgba(168,85,247,0.15)', color: '#c084fc',
+                                fontSize: 10, fontWeight: 700, border: '1px solid rgba(168,85,247,0.25)',
+                              }}>
+                                +{Math.floor(user.bonus_balance)} B
+                              </span>
+                            )}
                           </div>
                         </div>
                         {[
@@ -442,7 +554,7 @@ export default function Header() {
                     )}
                   </div>
                 </>
-              ) : (
+              ) : initialized ? (
                 <div style={{ display: 'flex', gap: 6 }}>
                   <Link to={path('login')} className="btn-ghost hidden sm:flex" style={{ padding: '6px 12px', fontSize: 12 }}>
                     {t('nav.login')}
@@ -451,15 +563,24 @@ export default function Header() {
                     {t('nav.register')}
                   </Link>
                 </div>
+              ) : (
+                <div style={{ width: 80, height: 32, borderRadius: 8, background: 'rgba(255,255,255,0.05)' }} />
               )}
 
               {/* Hamburger — HIDDEN ON DESKTOP */}
               <button onClick={() => setMobileOpen(v => !v)} className="md:hidden"
                 style={{
-                  width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'none', border: 'none', cursor: 'pointer', color: '#8b949e'
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px', height: 36,
+                  background: mobileOpen ? 'rgba(56,139,253,0.12)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${mobileOpen ? 'rgba(56,139,253,0.35)' : 'rgba(255,255,255,0.1)'}`,
+                  borderRadius: 10, cursor: 'pointer',
+                  color: mobileOpen ? '#388bfd' : '#8b949e',
+                  fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+                  transition: 'all .2s ease', flexShrink: 0,
                 }}>
-                {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+                {mobileOpen ? <X size={16} /> : <Menu size={16} />}
+                <span style={{ fontSize: 12 }}>{mobileOpen ? 'Fermer' : 'Menu'}</span>
               </button>
             </div>
           </div>
@@ -478,14 +599,15 @@ export default function Header() {
                 {CATS.map(c => (
                   <button key={c.id} onClick={() => handleCat(c.id as MarketCategory | '')}
                     style={{
-                      padding: '4px 12px', borderRadius: 20, fontSize: 12, cursor: 'pointer', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', gap: 5,
+                      padding: '4px 11px', borderRadius: 20, fontSize: 12, cursor: 'pointer', flexShrink: 0,
                       background: activeCategory === c.id ? '#1f6feb' : 'rgba(255,255,255,0.04)',
                       color: activeCategory === c.id ? 'white' : '#8b949e',
                       border: '1px solid ' + (activeCategory === c.id ? '#1f6feb' : 'rgba(255,255,255,0.07)'),
                       fontWeight: activeCategory === c.id ? 600 : 400,
                       fontFamily: 'inherit', transition: 'all .15s', whiteSpace: 'nowrap'
                     }}>
-                    {CAT_EMOJI[c.id]} {c.label}
+                    {CAT_ICONS[c.id]} {c.label}
                   </button>
                 ))}
               </div>
@@ -493,6 +615,66 @@ export default function Header() {
           </div>
         )}
       </header>
+
+      {/* Mobile search overlay */}
+      {searchOpen && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
+        }} onClick={() => setSearchOpen(false)}>
+          <div style={{
+            position: 'absolute', top: 0, left: 0, right: 0,
+            background: '#0d1117',
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            padding: '12px 16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            animation: 'slideDown .18s ease-out',
+          }} onClick={e => e.stopPropagation()}>
+            <style>{`@keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }`}</style>
+            <form onSubmit={e => { handleSearchSubmit(e); setSearchOpen(false); }} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <div style={{
+                flex: 1, position: 'relative', display: 'flex', alignItems: 'center',
+                background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(56,139,253,0.5)',
+                borderRadius: 12, boxShadow: '0 0 0 3px rgba(56,139,253,0.1)',
+              }}>
+                <Search size={16} style={{ position: 'absolute', left: 13, color: '#388bfd', pointerEvents: 'none' }} />
+                <input
+                  ref={mobileSearchRef}
+                  type="search"
+                  value={searchVal}
+                  onChange={e => handleSearchChange(e.target.value)}
+                  placeholder={t('nav.search_placeholder')}
+                  style={{
+                    width: '100%', background: 'transparent', border: 'none', borderRadius: 12,
+                    padding: '11px 36px 11px 40px', color: 'white', fontSize: 15,
+                    outline: 'none', fontFamily: 'inherit',
+                  }}
+                />
+                {searchVal && (
+                  <button type="button" onClick={() => setSearchVal('')}
+                    style={{
+                      position: 'absolute', right: 10, background: 'rgba(255,255,255,0.1)',
+                      border: 'none', borderRadius: '50%', width: 22, height: 22,
+                      cursor: 'pointer', color: '#8b949e',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={() => setSearchOpen(false)}
+                style={{
+                  padding: '10px 14px', background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
+                  color: '#8b949e', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+                  whiteSpace: 'nowrap', flexShrink: 0,
+                }}>
+                {fr ? 'Annuler' : 'Anile'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Spacer */}
       <div style={{ height: headerHeight + (onMarketsOrHome ? 10 : 0), flexShrink: 0 }} />
@@ -512,15 +694,6 @@ export default function Header() {
               <X size={18} />
             </button>
           </div>
-
-          {/* Mobile search */}
-          <form onSubmit={handleSearchSubmit} style={{ marginBottom: 16 }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#484f58' }} />
-              <input type="search" value={searchVal} onChange={e => handleSearchChange(e.target.value)}
-                placeholder={t('nav.search_placeholder')} className="input" style={{ paddingLeft: 36 }} />
-            </div>
-          </form>
 
           {/* Mobile nav links */}
           <nav style={{ marginBottom: 16 }}>
@@ -582,9 +755,14 @@ export default function Header() {
                   <div style={{ fontSize: 14, fontWeight: 700, color: 'white' }}>@{user.username}</div>
                   <div style={{ fontSize: 13, color: '#3fb950', fontFamily: 'JetBrains Mono,monospace', marginTop: 1 }}>
                     {Math.floor(user.balance).toLocaleString()} HTG
+                    {(user.bonus_balance ?? 0) > 0 && (
+                      <span style={{ marginLeft: 6, color: '#c084fc', fontSize: 11 }}>
+                        +{Math.floor(user.bonus_balance)} Bonus
+                      </span>
+                    )}
                   </div>
                 </div>
-                <button onClick={() => { setMobileOpen(false); setWalletOpen(true); }}
+                <button onClick={() => { setMobileOpen(false); openWallet('deposit'); }}
                   style={{
                     padding: '7px 14px', background: 'rgba(63,185,80,0.1)',
                     border: '1px solid rgba(63,185,80,0.3)', borderRadius: 8,
@@ -615,15 +793,18 @@ export default function Header() {
       {/* Bottom nav — mobile/tablet */}
       <nav className="bottom-nav">
         {[
-          { to: path('home'), icon: Home, label: t('nav.home') },
-          { to: path('markets'), icon: BarChart2, label: t('nav.markets') },
-          { to: user ? path('portfolio') : path('login'), icon: Wallet, label: user ? t('nav.portfolio') : t('nav.login') },
-          { to: user ? path('myBets') : path('register'), icon: user ? Award : User, label: user ? t('nav.my_bets') : t('nav.register') },
-        ].map(({ to, icon: Icon, label }) => (
-          <Link key={to + label} to={to} className={clsx('bnav-item', isActive(to) && 'active')}>
-            <Icon size={20} /><span>{label}</span>
-          </Link>
-        ))}
+          { to: path('home'),    icon: Home,     label: t('nav.home'),      exact: true },
+          { to: path('markets'), icon: BarChart2, label: t('nav.markets'),   exact: false },
+          { to: user ? path('portfolio') : path('login'),   icon: Wallet, label: user ? t('nav.portfolio') : t('nav.login'),  exact: false },
+          { to: user ? path('myBets')    : path('register'), icon: user ? Award : User, label: user ? t('nav.my_bets') : t('nav.register'), exact: false },
+        ].map(({ to, icon: Icon, label, exact }) => {
+          const active = exact ? location.pathname === to : location.pathname === to || location.pathname.startsWith(to + '/') || location.pathname.startsWith(to.replace(/\/[^/]+$/, '/market/'));
+          return (
+            <Link key={to + label} to={to} className={clsx('bnav-item', active && 'active')}>
+              <Icon size={20} /><span>{label}</span>
+            </Link>
+          );
+        })}
       </nav>
     </>
   );

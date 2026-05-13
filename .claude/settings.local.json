@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(findstr /i \"nodemailer\\\\|smtp\\\\|mail\")",
+      "Bash(node -e ' *)",
+      "Bash(timeout 8 node src/server.js)",
+      "Bash(curl -s \"http://localhost:4000/api/v1/polymarkets?limit=3\")",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const j=JSON.parse\\(d\\); console.log\\('count:', j.count, 'data.length:', j.data?.length, 'first:', j.data?.[0]?.title?.slice\\(0,50\\)\\)\")",
+      "Bash(curl -s \"http://localhost:4000/api/health\")",
+      "Bash(curl -s -X POST \"http://localhost:4000/api/v1/auth/login\" -H \"Content-Type: application/json\" -d \"{\\\\\"identifier\\\\\":\\\\\"admin@ayitimarket.com\\\\\",\\\\\"password\\\\\":\\\\\"Admin2024!\\\\\"}\")",
+      "Bash(curl -s -X POST \"http://localhost:4000/api/v1/admin/sync\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMmMwZGExYy03ZjRjLTQ0YzYtOTc4OS1mZWU0ZGFmMjYxMjkiLCJyb2xlIjoiYWRtaW4iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzc4NjA1NTc2LCJleHAiOjE3Nzg2MTI3NzZ9.h4FPf46TKBJwPb0HQrht4iV2fmSNGYUXjIIoEGOBRR8\")",
+      "Bash(curl -s \"http://localhost:4000/api/v1/polymarkets?limit=5\")",
+      "Bash(curl -s \"http://localhost:4000/api/v1/polymarkets?status=all&limit=5\")",
+      "Bash(curl -s \"http://localhost:4000/api/v1/polymarkets?status=active&sort=new&limit=5\")",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\(0,'utf8'\\); const j=JSON.parse\\(d\\); console.log\\(JSON.stringify\\(j.scripts, null, 2\\)\\)\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const f='src/server.js'; const t=fs.statSync\\(f\\).mtimeMs; fs.utimesSync\\(f, new Date\\(\\), new Date\\(\\)\\); console.log\\('Touched server.js to trigger --watch restart'\\);\")",
+      "Bash(powershell -Command \"Start-Sleep -Seconds 4; \\(Invoke-WebRequest -Uri 'http://localhost:4000/api/health' -UseBasicParsing\\).Content\")",
+      "Bash(powershell -Command \"Get-Process node | Select-Object Id, CPU, StartTime, CommandLine\")",
+      "Bash(curl -s \"http://localhost:4000/api/v1/admin/sync\" -X POST -H \"Content-Type: application/json\" -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJmMmMwZGExYy03ZjRjLTQ0YzYtOTc4OS1mZWU0ZGFmMjYxMjkiLCJyb2xlIjoiYWRtaW4iLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzc4NjA1NTc2LCJleHAiOjE3Nzg2MTI3NzZ9.h4FPf46TKBJwPb0HQrht4iV2fmSNGYUXjIIoEGOBRR8\")",
+      "Bash(node --check \"c:\\\\Users\\\\rb620099\\\\Downloads\\\\github\\\\Market-Ayiti\\\\Marketayiti\\\\backend\\\\src\\\\server.js\")",
+      "Bash(node --check \"c:\\\\Users\\\\rb620099\\\\Downloads\\\\github\\\\Market-Ayiti\\\\Marketayiti\\\\backend\\\\src\\\\routes\\\\auth.js\")",
+      "Bash(node --check \"c:\\\\Users\\\\rb620099\\\\Downloads\\\\github\\\\Market-Ayiti\\\\Marketayiti\\\\backend\\\\src\\\\services\\\\category.service.js\")"
+    ]
+  }
+}

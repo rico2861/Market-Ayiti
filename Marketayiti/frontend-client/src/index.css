@@ -186,6 +186,18 @@ body {
 }
 .mobile-menu.open { transform:translateX(0); }
 
+/* ── Skeleton shimmer ────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #161b22 25%, #21262d 50%, #161b22 75%);
+  background-size: 600px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 6px;
+}
+
 /* ── Bottom nav — mobile/tablet ONLY ────────────────────── */
 .bottom-nav {
   position:fixed; bottom:0; left:0; right:0; z-index:30;
@@ -257,14 +269,20 @@ img { max-width:100%; height:auto; display:block; }
 /* ── w-full utility ─────────────────────────────────────── */
 .w-full { width:100%; }
 
-/* ── Footer ──────────────────────────────────────────────── */
-footer {
-  border-top:1px solid rgba(255,255,255,0.05);
-  padding:14px 24px;
-  display:flex; align-items:center; justify-content:space-between;
-  flex-wrap:wrap; gap:8px;
+/* ── Native select — force dark options across all OSes ──── */
+select { color-scheme: dark; }
+select option {
+  background: #161b22;
+  color: #e6edf3;
 }
-@media (max-width:1023px) { footer { display:none; } }
+select optgroup { background: #0d1117; color: #8b949e; }
+
+/* ── details/summary accordion ─────────────────────────── */
+details summary::-webkit-details-marker { display: none; }
+details[open] summary > svg:last-child { transform: rotate(90deg); }
+
+/* ── Footer — always visible, component handles mobile spacing ── */
+footer { display:block; }
 /* ========================================
    HOME PAGE - ADVANCED STYLES & ANIMATIONS
    ======================================== */

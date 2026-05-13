@@ -61,7 +61,7 @@ model Market {
   category         MarketCategory @default(LOT)
   status           MarketStatus   @default(ACTIVE)
   endDate          DateTime       @map("end_date")
-  minBet           Decimal        @default(50) @db.Decimal(18, 2) @map("min_bet")
+  minBet           Decimal        @default(25) @db.Decimal(18, 2) @map("min_bet")
   maxBet           Decimal        @default(100000) @db.Decimal(18, 2) @map("max_bet")
   yesPool          Decimal        @default(0) @db.Decimal(18, 2) @map("yes_pool")
   noPool           Decimal        @default(0) @db.Decimal(18, 2) @map("no_pool")

@@ -2,16 +2,19 @@ const { WebSocketServer } = require('ws');
 const logger = require('../utils/logger');
 
 /**
- * WebSocket server with channel-based pub/sub.
+ * WebSocket server with channel-based pub/sub and connection tracking.
  *
  * Client subscribes:  { type: 'subscribe',   channel: 'markets' }
  * Client subscribes:  { type: 'subscribe',   channel: 'market:<id>' }
+ * Client subscribes:  { type: 'subscribe',   channel: 'categories' }
  * Client unsubs:      { type: 'unsubscribe', channel: '...' }
  * Server broadcasts:  { type: 'market:update', market_id, yes_prob, ... }
+ * Server broadcasts:  { type: 'categories:update', categories: [...] }
  *
  * Each broadcast goes to all clients subscribed to either:
- *   - 'markets' (global channel)
- *   - 'market:<market_id>' (specific market)
+ *   - 'markets'           (global market channel)
+ *   - 'market:<market_id>'(specific market)
+ *   - 'categories'        (category metadata channel)
  */
 function setupWebSocket(server) {
   const wss = new WebSocketServer({ server, path: '/ws' });
@@ -19,11 +22,18 @@ function setupWebSocket(server) {
   // ws → Set<channel>
   const subscriptions = new Map();
 
+  // Running message version — increments on every broadcast so clients can detect gaps
+  let broadcastVersion = 0;
+
   wss.on('connection', (ws, req) => {
     subscriptions.set(ws, new Set(['markets']));
-    logger.info(`WS connected: ${req.socket.remoteAddress}`);
+    logger.info(`WS connected (${subscriptions.size} total): ${req.socket.remoteAddress}`);
 
-    ws.send(JSON.stringify({ type: 'connected', timestamp: Date.now() }));
+    ws.send(JSON.stringify({
+      type: 'connected',
+      timestamp: Date.now(),
+      connections: subscriptions.size,
+    }));
 
     // Keep-alive ping
     ws.isAlive = true;
@@ -50,6 +60,7 @@ function setupWebSocket(server) {
 
     ws.on('close', () => {
       subscriptions.delete(ws);
+      logger.info(`WS disconnected (${subscriptions.size} remaining)`);
     });
 
     ws.on('error', (e) => {
@@ -68,32 +79,51 @@ function setupWebSocket(server) {
       ws.isAlive = false;
       try { ws.ping(); } catch {}
     }
-  }, 30000);
+  }, 30_000);
 
   wss.on('close', () => clearInterval(heartbeat));
 
   /**
    * Broadcast a payload to all clients subscribed to relevant channels.
-   * Determines target channels from the payload type.
+   * Automatically attaches the current version number.
    */
   function broadcast(payload) {
-    const data = JSON.stringify(payload);
-    const targetChannels = ['markets']; // always broadcast to global
+    broadcastVersion++;
+    const enriched = { ...payload, version: broadcastVersion, timestamp: Date.now() };
+    const data = JSON.stringify(enriched);
 
-    if (payload.market_id) {
-      targetChannels.push(`market:${payload.market_id}`);
+    // Determine target channels from the payload type
+    const targetChannels = [];
+    const USER_SPECIFIC = ['notification:new', 'user:balance_update'];
+    if (USER_SPECIFIC.includes(payload.type)) {
+      // User-specific: only send to the target user's channel
+      if (payload.user_id) targetChannels.push(`user:${payload.user_id}`);
+    } else {
+      targetChannels.push('markets'); // global market channel
+      if (payload.market_id) targetChannels.push(`market:${payload.market_id}`);
+      if (payload.type === 'categories:update') targetChannels.push('categories');
     }
 
+    let sent = 0;
     for (const [ws, channels] of subscriptions.entries()) {
       if (ws.readyState !== ws.OPEN) continue;
-      const isSubscribed = targetChannels.some(c => channels.has(c));
-      if (isSubscribed) {
-        try { ws.send(data); } catch {}
+      if (targetChannels.some(c => channels.has(c))) {
+        try { ws.send(data); sent++; } catch {}
       }
     }
+
+    logger.debug(`WS broadcast v${broadcastVersion} type="${payload.type}" → ${sent} clients`);
+    return broadcastVersion;
   }
 
-  return { wss, broadcast };
+  /**
+   * Number of currently open connections.
+   */
+  function getConnectionCount() {
+    return subscriptions.size;
+  }
+
+  return { wss, broadcast, getConnectionCount };
 }
 
 module.exports = { setupWebSocket };

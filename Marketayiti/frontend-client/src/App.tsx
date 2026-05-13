@@ -6,14 +6,21 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import type { Locale } from './types';
 
-const Home         = lazy(() => import('./pages/Home'));
-const Markets      = lazy(() => import('./pages/Markets'));
-const MarketDetail = lazy(() => import('./pages/MarketDetail'));
-const Auth         = lazy(() => import('./pages/Auth'));
-const Portfolio    = lazy(() => import('./pages/Portfolio'));
-const MyBets       = lazy(() => import('./pages/MyBets'));
-const Profile      = lazy(() => import('./pages/Profile'));
-const StaticPage   = lazy(() => import('./pages/StaticPage'));
+const NotFound          = lazy(() => import('./pages/NotFound'));
+const Home              = lazy(() => import('./pages/Home'));
+const Markets           = lazy(() => import('./pages/Markets'));
+const PolymarketLive    = lazy(() => import('./pages/PolymarketLive'));
+const MarketDetail   = lazy(() => import('./pages/MarketDetail'));
+const Auth           = lazy(() => import('./pages/Auth'));
+const Portfolio      = lazy(() => import('./pages/Portfolio'));
+const MyBets         = lazy(() => import('./pages/MyBets'));
+const Profile        = lazy(() => import('./pages/Profile'));
+const StaticPage     = lazy(() => import('./pages/StaticPage'));
+const AI             = lazy(() => import('./pages/AI'));
+const Notifications  = lazy(() => import('./pages/Notifications'));
+const Settings       = lazy(() => import('./pages/Settings'));
+const Help           = lazy(() => import('./pages/Help'));
+const ResetPassword  = lazy(() => import('./pages/Resetpassword'));
 
 function PageLoader() {
   return (
@@ -67,25 +74,31 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 function LocaleRoutes({ lang }: { lang: Locale }) {
   const R = {
-    ht: { login:'konekte', register:'enskri', portfolio:'pòtfolyo', myBets:'pari-mwen', profile:'pwofil' },
-    fr: { login:'connexion', register:'inscription', portfolio:'portefeuille', myBets:'mes-paris', profile:'profil' }
+    ht: { login:'konekte', register:'enskri', portfolio:'pòtfolyo', myBets:'pari-mwen', profile:'pwofil', notifications:'notifikasyon', settings:'paramèt', help:'èd', reset:'reyinisyalize' },
+    fr: { login:'connexion', register:'inscription', portfolio:'portefeuille', myBets:'mes-paris', profile:'profil', notifications:'notifications', settings:'parametres', help:'aide', reset:'reinitialiser' }
   }[lang];
 
   return (
     <Routes>
-      <Route path=""                element={<Layout><Home /></Layout>} />
-      <Route path="markets"         element={<Layout><Markets /></Layout>} />
+      <Route path=""                    element={<Layout><Home /></Layout>} />
+      <Route path="markets"             element={<Layout><Markets /></Layout>} />
+      <Route path="live"                element={<Layout><PolymarketLive /></Layout>} />
       <Route path="market/:category/:slug" element={<Layout><MarketDetail /></Layout>} />
-      <Route path={R.login}         element={<Layout><Auth mode="login" /></Layout>} />
-      <Route path={R.register}      element={<Layout><Auth mode="register" /></Layout>} />
-      <Route path={R.portfolio}     element={<ProtectedRoute><Layout><Portfolio /></Layout></ProtectedRoute>} />
-      <Route path={R.myBets}        element={<ProtectedRoute><Layout><MyBets /></Layout></ProtectedRoute>} />
-      <Route path={R.profile}       element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
-      <Route path="cgu"             element={<Layout><StaticPage /></Layout>} />
-      <Route path="confidentialite" element={<Layout><StaticPage /></Layout>} />
-      <Route path="contact"         element={<Layout><StaticPage /></Layout>} />
-      <Route path="about"           element={<Layout><StaticPage /></Layout>} />
-      <Route path="*"               element={<Navigate to={`/${lang}`} replace />} />
+      <Route path={R.login}             element={<Layout><Auth mode="login" /></Layout>} />
+      <Route path={R.register}          element={<Layout><Auth mode="register" /></Layout>} />
+      <Route path={R.reset}             element={<Layout><ResetPassword /></Layout>} />
+      <Route path={R.portfolio}         element={<ProtectedRoute><Layout><Portfolio /></Layout></ProtectedRoute>} />
+      <Route path={R.myBets}            element={<ProtectedRoute><Layout><MyBets /></Layout></ProtectedRoute>} />
+      <Route path={R.profile}           element={<ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>} />
+      <Route path={R.notifications}     element={<ProtectedRoute><Layout><Notifications /></Layout></ProtectedRoute>} />
+      <Route path={R.settings}          element={<ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>} />
+      <Route path={R.help}              element={<Layout><Help /></Layout>} />
+      <Route path="ai"                  element={<Layout><AI /></Layout>} />
+      <Route path="cgu"                 element={<Layout><StaticPage /></Layout>} />
+      <Route path="confidentialite"     element={<Layout><StaticPage /></Layout>} />
+      <Route path="contact"             element={<Layout><StaticPage /></Layout>} />
+      <Route path="about"               element={<Layout><StaticPage /></Layout>} />
+      <Route path="*"                   element={<Layout><NotFound /></Layout>} />
     </Routes>
   );
 }
@@ -102,10 +115,40 @@ export default function App() {
           <Route path="/fr/*" element={<LocaleRoutes lang="fr" />} />
           <Route path="*"    element={<Navigate to="/ht" replace />} />
         </Routes>
-        <Toaster position="top-center" toastOptions={{
-          duration:3000,
-          style:{ background:'#161b22', color:'#e6edf3', border:'1px solid rgba(255,255,255,0.1)', borderRadius:'10px', fontSize:'13px', fontFamily:'Inter,sans-serif', maxWidth:'380px' }
-        }} />
+        <Toaster
+          position="top-center"
+          gutter={8}
+          toastOptions={{
+            duration: 3500,
+            style: {
+              background: '#0d1117',
+              color: '#e6edf3',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 12,
+              fontSize: 14,
+              fontFamily: 'Inter, sans-serif',
+              maxWidth: 'min(420px, calc(100vw - 24px))',
+              padding: '12px 16px',
+              boxShadow: '0 12px 40px rgba(0,0,0,0.55)',
+            },
+            success: {
+              duration: 3000,
+              iconTheme: { primary: '#3fb950', secondary: '#0d1117' },
+              style: {
+                background: '#0d1117',
+                borderLeft: '3px solid #3fb950',
+              },
+            },
+            error: {
+              duration: 4500,
+              iconTheme: { primary: '#f85149', secondary: '#0d1117' },
+              style: {
+                background: '#0d1117',
+                borderLeft: '3px solid #f85149',
+              },
+            },
+          }}
+        />
       </AuthProvider>
     </BrowserRouter>
   );

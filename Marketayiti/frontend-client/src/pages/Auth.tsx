@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Mail, Phone, AtSign, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Phone, AtSign, AlertCircle, Eye, EyeOff, ShieldCheck, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDebouncedCallback } from 'use-debounce';
-import toast from 'react-hot-toast';
+import { showToast } from '../utils/toast';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../hooks/useLocale';
 import { authAPI } from '../api';
@@ -14,7 +14,7 @@ type DetectedType = 'email' | 'phone' | 'username' | 'invalid' | null;
 
 export default function Auth({ mode }: Props) {
   const { t } = useTranslation();
-  const { login, register, user } = useAuth();
+  const { login, register, user, complete2fa } = useAuth();
   const { path } = useLocale();
   const navigate  = useNavigate();
   const location  = useLocation();
@@ -26,9 +26,40 @@ export default function Auth({ mode }: Props) {
   const [showPw,         setShowPw]         = useState(false);
   const [detected,       setDetected]       = useState<DetectedType>(null);
   const [normalizedValue,setNormalizedValue] = useState('');
-  const [busy,           setBusy]           = useState(false);
-  const [error,          setError]          = useState('');
-  const [suggestions,    setSuggestions]    = useState<string[]>([]);
+  const [busy,             setBusy]             = useState(false);
+  const [error,            setError]            = useState('');
+  const [remainingAttempts,setRemainingAttempts] = useState<number | null>(null);
+  const [suggestions,      setSuggestions]      = useState<string[]>([]);
+  const [step,           setStep]           = useState<'credentials' | '2fa' | 'locked'>('credentials');
+  const [totpCode,       setTotpCode]       = useState('');
+  const totpRef = useRef<HTMLInputElement>(null);
+
+  // Locked state
+  const [lockedEmailMasked, setLockedEmailMasked] = useState('');
+  const [lockedUntil,       setLockedUntil]       = useState<Date | null>(null);
+  const [unlockCode,        setUnlockCode]        = useState('');
+  const [newPassword,       setNewPassword]       = useState('');
+  const [confirmPassword,   setConfirmPassword]   = useState('');
+  const [showNewPw,         setShowNewPw]         = useState(false);
+  const [showConfirmPw,     setShowConfirmPw]     = useState(false);
+  const [resendCooldown,    setResendCooldown]    = useState(0);
+  const [timeLeft,          setTimeLeft]          = useState(0);
+
+  // Countdown timer for lock expiry
+  useEffect(() => {
+    if (!lockedUntil) return;
+    const tick = () => setTimeLeft(Math.max(0, Math.ceil((lockedUntil.getTime() - Date.now()) / 60000)));
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -69,17 +100,35 @@ export default function Auth({ mode }: Props) {
     setBusy(true);
     try {
       if (mode === 'login') {
-        const { via } = await login(identifier, password);
-        toast.success(t('auth.welcome'));
-        toast(t(`auth.via_${via}`), { duration: 1500, icon: '✓' });
+        const result = await login(identifier, password);
+        if (result && 'requires_2fa' in result) {
+          setStep('2fa');
+          setTimeout(() => totpRef.current?.focus(), 100);
+          return;
+        }
+        setRemainingAttempts(null);
+        showToast.success(t('auth.welcome'), t('auth.welcome_sub') || 'Bòn rive sou AyitiMarket');
       } else {
         await register({ identifier, password, email, full_name: fullName || undefined });
-        toast.success(t('auth.account_created'));
+        showToast.success(t('auth.account_created'), 'Kont ou kreye avèk siksè!');
       }
       navigate(path('home'), { replace: true });
     } catch (e: any) {
-      const detail = e.response?.data?.detail || e.response?.data?.errors?.[0]?.message || 'Erè entèn';
+      // 423 = account locked → switch to unlock flow
+      if (e.response?.status === 423) {
+        const data = e.response.data;
+        setLockedEmailMasked(data.email_masked || '');
+        setLockedUntil(data.locked_until ? new Date(data.locked_until) : null);
+        setStep('locked');
+        setError('');
+        return;
+      }
+      const data   = e.response?.data || {};
+      const detail = data.detail || data.errors?.[0]?.message || 'Erè entèn';
       setError(detail);
+      if (typeof data.remaining_attempts === 'number') {
+        setRemainingAttempts(data.remaining_attempts);
+      }
       // Fetch suggestions if username conflict
       if (e.response?.status === 400 && detail.includes('itilizatè')) {
         try {
@@ -94,10 +143,318 @@ export default function Auth({ mode }: Props) {
     } finally { setBusy(false); }
   };
 
+  const handle2fa = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (totpCode.length !== 6) { setError('Kòd 6 chif obligatwa'); return; }
+    setError('');
+    setBusy(true);
+    try {
+      await complete2fa(totpCode);
+      showToast.success(t('auth.welcome'), 'Bòn rive sou AyitiMarket');
+      navigate(path('home'), { replace: true });
+    } catch (e: any) {
+      setError(e.response?.data?.detail || 'Kòd TOTP envalid');
+      setTotpCode('');
+      totpRef.current?.focus();
+    } finally { setBusy(false); }
+  };
+
+  const unlockStrength = useMemo(() => {
+    if (!newPassword) return 0;
+    let s = 0;
+    if (newPassword.length >= 8)  s++;
+    if (newPassword.length >= 12) s++;
+    if (/[A-Z]/.test(newPassword)) s++;
+    if (/[0-9]/.test(newPassword)) s++;
+    if (/[^A-Za-z0-9]/.test(newPassword)) s++;
+    return s;
+  }, [newPassword]);
+
+  const unlockStrengthLabel = unlockStrength <= 1 ? 'Trè fèb' : unlockStrength === 2 ? 'Fèb' : unlockStrength === 3 ? 'Mwayen' : unlockStrength === 4 ? 'Solid' : 'Trè solid';
+  const unlockStrengthColor = unlockStrength <= 2 ? '#f85149' : unlockStrength === 3 ? '#f0883e' : '#3fb950';
+  const confirmMatch        = confirmPassword.length > 0 && confirmPassword === newPassword;
+  const confirmMismatch     = confirmPassword.length > 0 && confirmPassword !== newPassword;
+
+  const handleUnlock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (unlockCode.length !== 6)  { setError('Kòd 6 chif obligatwa'); return; }
+    if (unlockStrength < 3)       { setError('Modpas pa ase solid — ajoute majiskil, chif oswa karaktè espesyal'); return; }
+    if (newPassword !== confirmPassword) { setError('Konfirmasyon modpas pa idantik'); return; }
+    setBusy(true);
+    try {
+      await authAPI.unlockAccount(identifier, unlockCode, newPassword, confirmPassword);
+      showToast.success('Kont debloke!', 'Ou ka konekte kounye a');
+      setStep('credentials');
+      setError('');
+      setUnlockCode('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPassword('');
+    } catch (e: any) {
+      setError(e.response?.data?.detail || 'Kòd envalid oswa ekspire');
+    } finally { setBusy(false); }
+  };
+
+  const handleResendCode = async () => {
+    if (resendCooldown > 0) return;
+    try {
+      await authAPI.requestReset(identifier);
+      showToast.success('Kòd voye!', 'Verifye imel ou');
+      setResendCooldown(60);
+    } catch {
+      showToast.error('Erè — Eseye ankò');
+    }
+  };
+
   const HintIcon = detected === 'email' ? Mail
     : detected === 'phone'    ? Phone
     : detected === 'username' ? AtSign
     : AlertCircle;
+
+  // ── Locked step ───────────────────────────────────────────────────────────
+  if (step === 'locked') return (
+    <div className="container py-8 md:py-16 fade-in">
+      <div className="mx-auto" style={{ maxWidth: 420 }}>
+
+        {/* Header */}
+        <div className="text-center mb-7">
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 56, height: 56, borderRadius: 16,
+            background: 'rgba(248,81,73,0.12)', border: '1px solid rgba(248,81,73,0.3)', marginBottom: 16,
+          }}>
+            <Lock size={26} color="#f85149" />
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'white', margin: '0 0 8px' }}>
+            Kont ou bloke
+          </h1>
+          <p style={{ fontSize: 13, color: '#8b949e', margin: 0, lineHeight: 1.6 }}>
+            {lockedEmailMasked
+              ? <>Yon kòd deblokaj 6 chif voye nan <strong style={{ color: '#e6edf3' }}>{lockedEmailMasked}</strong></>
+              : 'Kont ou bloke apre plizyè tantativ echèk.'}
+          </p>
+          <p style={{ fontSize: 12, color: '#484f58', marginTop: 5 }}>
+            Kòd la valid pou <strong style={{ color: '#8b949e' }}>15 minit</strong>
+            {timeLeft > 0 && <> — kont debloke otomatikman nan <strong style={{ color: '#8b949e' }}>{timeLeft} minit</strong></>}
+          </p>
+        </div>
+
+        <div className="rounded-xl p-5 md:p-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <form onSubmit={handleUnlock} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+
+            {error && (
+              <div style={{ background: 'rgba(248,81,73,0.08)', border: '1px solid rgba(248,81,73,0.2)',
+                borderRadius: 8, padding: '10px 14px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <AlertCircle size={15} color="#f85149" style={{ marginTop: 1, flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: '#f85149' }}>{error}</span>
+              </div>
+            )}
+
+            {/* ── Unlock code ── */}
+            <div>
+              <label style={{ display: 'block', fontSize: 11, color: '#8b949e', fontWeight: 600,
+                textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                Kòd deblokaj (6 chif)
+              </label>
+              <input
+                type="text" inputMode="numeric" maxLength={6} autoFocus
+                placeholder="000000"
+                value={unlockCode}
+                onChange={e => setUnlockCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="input"
+                style={{
+                  textAlign: 'center', fontSize: 30, fontFamily: 'JetBrains Mono, monospace',
+                  letterSpacing: 12, fontWeight: 700,
+                  color: unlockCode.length === 6 ? '#3fb950' : 'white',
+                  borderColor: unlockCode.length === 6 ? 'rgba(63,185,80,0.4)' : undefined,
+                }}
+              />
+              {unlockCode.length === 6 && (
+                <p style={{ fontSize: 11, color: '#3fb950', margin: '4px 0 0', textAlign: 'center' }}>
+                  Kòd antre — kontinye ak modpas
+                </p>
+              )}
+            </div>
+
+            {/* ── New password ── */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <label style={{ fontSize: 11, color: '#8b949e', fontWeight: 600,
+                  textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Nouvo modpas
+                </label>
+                {newPassword && (
+                  <span style={{ fontSize: 11, fontWeight: 700, color: unlockStrengthColor }}>
+                    {unlockStrengthLabel}
+                  </span>
+                )}
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showNewPw ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  placeholder="Min. 8 karaktè"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="input"
+                  style={{ paddingRight: 40 }}
+                />
+                <button type="button" onClick={() => setShowNewPw(s => !s)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', color: '#8b949e', padding: 0 }}>
+                  {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+
+              {/* Strength bar — 5 segments */}
+              {newPassword && (
+                <>
+                  <div style={{ marginTop: 6, display: 'flex', gap: 3 }}>
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} style={{
+                        flex: 1, height: 3, borderRadius: 2, transition: 'background .2s',
+                        background: i <= unlockStrength ? unlockStrengthColor : 'rgba(255,255,255,0.06)',
+                      }} />
+                    ))}
+                  </div>
+                  {unlockStrength < 3 && (
+                    <p style={{ fontSize: 11, color: '#8b949e', margin: '5px 0 0', lineHeight: 1.5 }}>
+                      Ajoute: majiskil (A–Z), chif (0–9), oswa karaktè espesyal (!@#$…)
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* ── Confirm password ── */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+                <label style={{ fontSize: 11, color: '#8b949e', fontWeight: 600,
+                  textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Konfime modpas
+                </label>
+                {confirmPassword.length > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 700,
+                    color: confirmMatch ? '#3fb950' : '#f85149' }}>
+                    {confirmMatch ? 'Idantik' : 'Pa idantik'}
+                  </span>
+                )}
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirmPw ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  placeholder="Repete nouvo modpas ou"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="input"
+                  style={{
+                    paddingRight: 40,
+                    borderColor: confirmMismatch ? 'rgba(248,81,73,0.5)' : confirmMatch ? 'rgba(63,185,80,0.4)' : undefined,
+                  }}
+                />
+                <button type="button" onClick={() => setShowConfirmPw(s => !s)}
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer', color: '#8b949e', padding: 0 }}>
+                  {showConfirmPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* ── Submit ── */}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={
+                busy ||
+                unlockCode.length !== 6 ||
+                unlockStrength < 3 ||
+                !confirmMatch
+              }
+              style={{ background: 'linear-gradient(135deg,#f85149,#da3633)', marginTop: 2 }}
+            >
+              {busy ? 'Verifikasyon…' : 'Debloke kont mwen'}
+            </button>
+
+            {/* ── Footer actions ── */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+              <button type="button" onClick={handleResendCode} disabled={resendCooldown > 0}
+                style={{ background: 'none', border: 'none', padding: 0,
+                  cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer',
+                  fontSize: 12, color: resendCooldown > 0 ? '#484f58' : '#58a6ff' }}>
+                {resendCooldown > 0 ? `Voye ankò nan ${resendCooldown}s` : 'Voye kòd ankò'}
+              </button>
+              <button type="button"
+                onClick={() => { setStep('credentials'); setError(''); setUnlockCode(''); setNewPassword(''); setConfirmPassword(''); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 12, color: '#8b949e', padding: 0 }}>
+                ← Tounen
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── 2FA step ──────────────────────────────────────────────────────────────
+  if (step === '2fa') return (
+    <div className="container py-8 md:py-16 fade-in">
+      <div className="mx-auto" style={{ maxWidth: 380 }}>
+        <div className="text-center mb-7">
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 52, height: 52, borderRadius: 14, background: 'rgba(163,113,247,0.12)',
+            border: '1px solid rgba(163,113,247,0.3)', marginBottom: 16 }}>
+            <ShieldCheck size={24} color="#a371f7" />
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'white', margin: '0 0 6px' }}>Verifikasyon 2FA</h1>
+          <p style={{ fontSize: 13, color: '#8b949e', margin: 0 }}>
+            Antre kòd 6 chif nan aplikasyon otantifikatè ou
+          </p>
+        </div>
+
+        <div className="rounded-xl p-5 md:p-6" style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <form onSubmit={handle2fa} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {error && (
+              <div style={{ background: 'rgba(248,81,73,0.1)', border: '1px solid rgba(248,81,73,0.3)',
+                borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#f85149' }}>
+                {error}
+              </div>
+            )}
+            <div>
+              <label style={{ display: 'block', fontSize: 11, color: '#8b949e', fontWeight: 600,
+                textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+                Kòd TOTP
+              </label>
+              <input
+                ref={totpRef}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={totpCode}
+                onChange={e => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                autoComplete="one-time-code"
+                className="input"
+                style={{ textAlign: 'center', fontSize: 24, letterSpacing: '0.4em', fontFamily: 'monospace' }}
+                required
+              />
+            </div>
+            <button type="submit" className="btn btn-primary" disabled={busy || totpCode.length !== 6}>
+              {busy ? 'Verifikasyon…' : 'Verifye'}
+            </button>
+            <button type="button" onClick={() => { setStep('credentials'); setError(''); setTotpCode(''); }}
+              className="btn btn-ghost btn-sm" style={{ fontSize: 12, color: '#8b949e' }}>
+              ← Retounen nan koneksyon
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="container py-8 md:py-16 fade-in">
@@ -235,6 +592,34 @@ export default function Auth({ mode }: Props) {
               }}>
                 <AlertCircle style={{ width: 14, height: 14, flexShrink: 0, marginTop: 1 }} />
                 <span>{error}</span>
+              </div>
+            )}
+
+            {/* Progressive lockout warning — shown when remaining attempts are low */}
+            {!error && remainingAttempts !== null && remainingAttempts <= 2 && mode === 'login' && (
+              <div style={{
+                background: remainingAttempts === 1 ? 'rgba(248,81,73,0.08)' : 'rgba(240,136,62,0.08)',
+                border: `1px solid ${remainingAttempts === 1 ? 'rgba(248,81,73,0.3)' : 'rgba(240,136,62,0.3)'}`,
+                borderRadius: 8, padding: '9px 12px', fontSize: 12,
+                color: remainingAttempts === 1 ? '#f85149' : '#f0883e',
+                display: 'flex', alignItems: 'center', gap: 6,
+              }}>
+                <AlertCircle size={13} style={{ flexShrink: 0 }} />
+                <span>
+                  {remainingAttempts === 1
+                    ? '⚠️ Dènye tantativ — Kont ou pral bloke si ou echwe ankò'
+                    : `Atansyon — ${remainingAttempts} tantativ rete anvan kont bloke`}
+                </span>
+              </div>
+            )}
+
+            {mode === 'login' && (
+              <div style={{ textAlign: 'right', marginTop: -6 }}>
+                <Link to={path('reset')} style={{ fontSize: 12, color: '#8b949e', textDecoration: 'none' }}
+                  onMouseEnter={e => (e.currentTarget.style.color = '#1f6feb')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#8b949e')}>
+                  {t('auth.forgot_password')}
+                </Link>
               </div>
             )}
 

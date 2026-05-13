@@ -15,19 +15,26 @@ export default defineConfig({
       '/ws': {
         target: 'ws://localhost:4000',
         ws: true,
-        changeOrigin: true
+        changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', () => { /* suppress expected WS disconnect noise */ });
+        }
       }
     }
   },
   build: {
     outDir: 'dist',
     sourcemap: false,
+    target: 'es2020',
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
         manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
+          react:  ['react', 'react-dom', 'react-router-dom'],
           charts: ['recharts'],
-          i18n: ['i18next', 'react-i18next', 'i18next-browser-languagedetector']
+          i18n:   ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
+          ui:     ['lucide-react', 'react-hot-toast'],
+          http:   ['axios'],
         }
       }
     }

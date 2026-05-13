@@ -74,6 +74,7 @@
     "full_name_placeholder": "Jean Pierre",
     "password": "Mot de passe",
     "password_placeholder": "Minimum 8 caractères",
+    "forgot_password": "Mot de passe oublié ?",
     "login_btn": "Se connecter",
     "register_btn": "Créer mon compte",
     "no_account": "Pas encore de compte ?",

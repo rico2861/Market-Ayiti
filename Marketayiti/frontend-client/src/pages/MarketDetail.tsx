@@ -4,7 +4,7 @@ import {
   ArrowLeft, Clock, TrendingUp, AlertCircle, Share2,
   Twitter, CheckCircle, X, Heart, MessageSquare, Send, Zap,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { showToast } from '../utils/toast';
 import { useMarket } from '../hooks/useMarkets';
 import { useMarketRealtime } from '../hooks/useRealtime';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +26,7 @@ const CAT_COLOR: Record<string, string> = {
   nouvo: '#f85149',
 };
 
-const QUICK_AMOUNTS = [100, 250, 500, 1000, 2500] as const;
+const QUICK_AMOUNTS = [25, 100, 250, 500, 1000] as const;
 
 /* ──────────────────────────────────────────────────────────────────────────── */
 /* Types locaux                                                                 */
@@ -35,6 +35,7 @@ const QUICK_AMOUNTS = [100, 250, 500, 1000, 2500] as const;
 interface Comment {
   id: string;
   author: string;
+  user_id: string;
   text: string;
   createdAt: Date;
 }
@@ -154,13 +155,14 @@ interface BetConfirmModalProps {
   odds: number;
   potential: number;
   marketTitle: string;
+  optionLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
   busy: boolean;
 }
 
 const BetConfirmModal = memo(function BetConfirmModal({
-  option, amount, odds, potential, marketTitle, onConfirm, onCancel, busy,
+  option, amount, odds, potential, marketTitle, optionLabel, onConfirm, onCancel, busy,
 }: BetConfirmModalProps) {
   // Empêcher le scroll du body pendant que le modal est ouvert
   useEffect(() => {
@@ -240,7 +242,7 @@ const BetConfirmModal = memo(function BetConfirmModal({
               color: accent,
             }}
           >
-            {isYes ? '✓ Wi' : '✗ Non'} — {odds.toFixed(2)}×
+            {isYes ? '✓' : '✗'} {optionLabel} — {odds.toFixed(2)}×
           </div>
         </div>
 
@@ -347,77 +349,118 @@ function CountdownDisplay({ endDate }: { endDate: string }) {
 interface RecentBetsSectionProps {
   bets: RecentBet[];
   loading: boolean;
+  market?: any;
 }
 
-function BetColumn({
-  items, color, label, loading,
-}: { items: RecentBet[]; color: string; label: string; loading: boolean }) {
-  return (
-    <div className="flex-1 min-w-0">
-      <div
-        className="text-[11px] sm:text-[12px] font-bold uppercase mb-2.5"
-        style={{ color, letterSpacing: '0.8px' }}
-      >
-        {label}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        {loading ? (
-          <div className="text-[12px] text-center py-3" style={{ color: '#8b949e' }}>
-            Chajman…
-          </div>
-        ) : items.length === 0 ? (
-          <p className="text-[12px] text-center py-3" style={{ color: '#8b949e' }}>
-            Poko gen pari
-          </p>
-        ) : (
-          items.map((bet, idx) => (
-            <div
-              key={bet.id}
-              className="flex items-center justify-between rounded-lg px-3 py-2 text-[12px]"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                animation: 'slideInBet 0.3s ease forwards',
-                animationDelay: `${idx * 50}ms`,
-                opacity: 0,
-              }}
-            >
-              <span className="truncate" style={{ color: '#c9d1d9', fontWeight: 500 }}>
-                {bet.author}
-              </span>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span
-                  style={{ color, fontWeight: 700, fontFamily: 'JetBrains Mono, monospace' }}
-                >
-                  {bet.amount.toLocaleString()}
-                </span>
-                <span style={{ color: '#484f58', fontSize: 11 }}>{relativeTime(bet.createdAt)}</span>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RecentBetsSection({ bets, loading }: RecentBetsSectionProps) {
-  const topYes = useMemo(() => bets.filter((b) => b.option === 'yes').slice(0, 5), [bets]);
-  const topNo = useMemo(() => bets.filter((b) => b.option === 'no').slice(0, 5), [bets]);
+function RecentBetsSection({ bets, loading, market }: RecentBetsSectionProps) {
+  const labelYes = market?.option_a || 'Wi';
+  const labelNo  = market?.option_b || 'Non';
+  const allSorted = useMemo(() => [...bets].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, 10), [bets]);
+  const totalYes = useMemo(() => bets.filter(b => b.option === 'yes').reduce((s, b) => s + b.amount, 0), [bets]);
+  const totalNo  = useMemo(() => bets.filter(b => b.option === 'no').reduce((s, b) => s + b.amount, 0), [bets]);
 
   return (
     <div
       className="rounded-2xl p-4 sm:p-5"
       style={{ background: '#161b22', border: '1px solid rgba(255,255,255,0.08)' }}
     >
-      <h3 className="text-white text-[13px] sm:text-[14px] font-bold mb-3 sm:mb-4 flex items-center gap-1.5 tracking-tight">
-        <Zap size={15} style={{ color: '#f97316' }} />
-        Dènye Paris (HTG)
-      </h3>
-      <div className="flex gap-3 sm:gap-4">
-        <BetColumn items={topYes} color="#3fb950" label="Top Wi" loading={loading} />
-        <div className="w-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
-        <BetColumn items={topNo} color="#f85149" label="Top Non" loading={loading} />
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-white text-[13px] sm:text-[14px] font-bold flex items-center gap-1.5 tracking-tight">
+          <Zap size={15} style={{ color: '#f97316' }} />
+          Dènye Paris
+        </h3>
+        <span className="text-[11px] font-semibold" style={{ color: '#484f58' }}>
+          {bets.length} total
+        </span>
       </div>
+
+      {/* Proportion bar (no amounts shown) */}
+      {(totalYes > 0 || totalNo > 0) && (
+        <div className="mb-4">
+          <div className="flex justify-between text-[11px] mb-1.5" style={{ color: '#8b949e' }}>
+            <span style={{ color: '#3fb950', fontWeight: 600 }}>{labelYes} · {Math.round((totalYes / (totalYes + totalNo)) * 100)}%</span>
+            <span style={{ color: '#f85149', fontWeight: 600 }}>{Math.round((totalNo / (totalYes + totalNo)) * 100)}% · {labelNo}</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(248,81,73,0.25)' }}>
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${totalYes + totalNo > 0 ? Math.round((totalYes / (totalYes + totalNo)) * 100) : 50}%`,
+                background: 'linear-gradient(90deg,#2ea043,#3fb950)',
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Bet list */}
+      {loading ? (
+        <div className="flex flex-col gap-2">
+          {[1,2,3].map(i => (
+            <div key={i} className="h-9 rounded-lg animate-pulse" style={{ background: 'rgba(255,255,255,0.04)' }} />
+          ))}
+        </div>
+      ) : allSorted.length === 0 ? (
+        <div className="text-center py-6" style={{ color: '#484f58', fontSize: 13 }}>
+          Poko gen pari sou mache sa a
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {allSorted.map((bet, idx) => {
+            const isYes = bet.option === 'yes';
+            const color = isYes ? '#3fb950' : '#f85149';
+            const label = isYes ? labelYes : labelNo;
+            return (
+              <div
+                key={bet.id}
+                className="flex items-center justify-between rounded-xl px-3 py-2.5"
+                style={{
+                  background: isYes ? 'rgba(63,185,80,0.04)' : 'rgba(248,81,73,0.04)',
+                  border: `1px solid ${isYes ? 'rgba(63,185,80,0.10)' : 'rgba(248,81,73,0.10)'}`,
+                  animation: 'slideInBet 0.3s ease forwards',
+                  animationDelay: `${idx * 40}ms`,
+                  opacity: 0,
+                }}
+              >
+                {/* Left: avatar + username */}
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className="flex-shrink-0 rounded-full flex items-center justify-center text-[10px] font-bold"
+                    style={{ width: 24, height: 24, background: `${color}20`, color, border: `1px solid ${color}30` }}
+                  >
+                    {bet.author[0]?.toUpperCase()}
+                  </div>
+                  <span className="text-[12px] font-medium truncate" style={{ color: '#c9d1d9' }}>
+                    {bet.author}
+                  </span>
+                </div>
+
+                {/* Right: option badge + amount + time */}
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                    style={{ background: `${color}18`, color, border: `1px solid ${color}28` }}
+                  >
+                    {label}
+                  </span>
+                  <span
+                    className="text-[12px] font-bold"
+                    style={{ color, fontFamily: 'JetBrains Mono, monospace' }}
+                  >
+                    {bet.amount >= 1000
+                      ? `${(bet.amount / 1000).toFixed(bet.amount % 1000 === 0 ? 0 : 1)}K`
+                      : bet.amount.toLocaleString()}
+                  </span>
+                  <span className="text-[10px]" style={{ color: '#484f58', minWidth: 28, textAlign: 'right' }}>
+                    {relativeTime(bet.createdAt)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -436,47 +479,56 @@ function CommentsSection({ marketId, user }: CommentsSectionProps) {
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loadingComments, setLoadingComments] = useState(true);
+  const { path } = useLocale();
 
-  useEffect(() => {
-    let cancelled = false;
-    const fetchComments = async () => {
-      try {
-        setLoadingComments(true);
-        const mock: Comment[] = [
-          { id: '1', author: 'Jean P.', text: 'Mwen panse Wi ap genyen sa a fasilman!', createdAt: new Date(Date.now() - 3_600_000) },
-          { id: '2', author: 'Marie C.', text: 'Pa twò sèten... Sitiyasyon an konplike toujou.', createdAt: new Date(Date.now() - 7_200_000) },
-        ];
-        if (!cancelled) setComments(mock);
-      } catch (err) {
-        console.error('Erè chajman kòmantè:', err);
-      } finally {
-        if (!cancelled) setLoadingComments(false);
-      }
-    };
-    fetchComments();
-    return () => { cancelled = true; };
+  const loadComments = useCallback(async () => {
+    try {
+      setLoadingComments(true);
+      const res = await marketsAPI.getComments(marketId);
+      setComments(res.data.map((c) => ({
+        id: c.id,
+        author: c.username,
+        user_id: c.user_id,
+        text: c.text,
+        createdAt: new Date(c.created_at),
+      })));
+    } catch {
+      // keep empty
+    } finally {
+      setLoadingComments(false);
+    }
   }, [marketId]);
+
+  useEffect(() => { loadComments(); }, [loadComments]);
 
   const handleSubmit = useCallback(async () => {
     if (!newComment.trim() || !user) return;
     setSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 400));
-      const comment: Comment = {
-        id: Date.now().toString(),
-        author: user.username || 'Ou',
-        text: newComment.trim(),
-        createdAt: new Date(),
-      };
-      setComments((prev) => [comment, ...prev]);
+      const res = await marketsAPI.addComment(marketId, newComment.trim());
+      const c = res.data;
+      setComments((prev) => [{
+        id: c.id, author: c.username, user_id: c.user_id,
+        text: c.text, createdAt: new Date(c.created_at),
+      }, ...prev]);
       setNewComment('');
-      toast.success('Kòmantè ajoute!');
-    } catch (err) {
-      toast.error('Erè tè ap ajoute kòmantè');
+      showToast.success('Kòmantè ajoute!');
+    } catch {
+      showToast.error('Erè — eseye ankò');
     } finally {
       setSubmitting(false);
     }
-  }, [newComment, user]);
+  }, [newComment, user, marketId]);
+
+  const handleDelete = useCallback(async (commentId: string) => {
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    try {
+      await marketsAPI.deleteComment(marketId, commentId);
+    } catch {
+      showToast.error('Erè sipriman');
+      loadComments();
+    }
+  }, [marketId, loadComments]);
 
   const hasDraft = newComment.trim().length > 0;
 
@@ -506,9 +558,7 @@ function CommentsSection({ marketId, user }: CommentsSectionProps) {
               }}
               onFocus={(e) => (e.currentTarget.style.borderColor = 'rgba(88,166,255,0.45)')}
               onBlur={(e) => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
-              }}
+              onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit(); }}
             />
             <button
               type="button"
@@ -521,34 +571,27 @@ function CommentsSection({ marketId, user }: CommentsSectionProps) {
                 cursor: hasDraft ? 'pointer' : 'not-allowed',
                 color: hasDraft ? 'white' : '#484f58',
               }}
-              aria-label="Voye kòmantè"
             >
               {submitting ? '…' : <Send size={15} />}
             </button>
           </div>
-          <p className="text-[11px] mt-1.5 ml-0.5" style={{ color: '#484f58' }}>
-            Ctrl+Enter pou voye
-          </p>
+          <p className="text-[11px] mt-1.5" style={{ color: '#484f58' }}>Ctrl+Enter pou voye</p>
         </div>
       ) : (
         <div
           className="rounded-xl px-3.5 py-3 mb-4 text-[13px] text-center"
           style={{ background: 'rgba(255,255,255,0.03)', color: '#8b949e' }}
         >
-          <Link to="/login" style={{ color: '#58a6ff', textDecoration: 'none' }}>Konekte</Link>
+          <Link to={path('login')} style={{ color: '#58a6ff', textDecoration: 'none' }}>Konekte</Link>
           {' '}pou ajoute kòmantè
         </div>
       )}
 
       <div className="flex flex-col gap-2.5">
         {loadingComments ? (
-          <div className="text-[12px] text-center py-5" style={{ color: '#8b949e' }}>
-            Chajman kòmantè…
-          </div>
+          <div className="text-[12px] text-center py-5" style={{ color: '#8b949e' }}>Chajman…</div>
         ) : comments.length === 0 ? (
-          <div className="text-[12px] text-center py-5" style={{ color: '#8b949e' }}>
-            Poko gen kòmantè
-          </div>
+          <div className="text-[12px] text-center py-5" style={{ color: '#8b949e' }}>Poko gen kòmantè</div>
         ) : (
           comments.map((comment, idx) => (
             <div
@@ -563,11 +606,23 @@ function CommentsSection({ marketId, user }: CommentsSectionProps) {
             >
               <div className="flex justify-between items-center mb-1.5 text-[12px]">
                 <span style={{ color: '#58a6ff', fontWeight: 600 }}>{comment.author}</span>
-                <span style={{ color: '#484f58' }}>{relativeTime(comment.createdAt)}</span>
+                <div className="flex items-center gap-2">
+                  <span style={{ color: '#484f58' }}>{relativeTime(comment.createdAt)}</span>
+                  {user && comment.user_id === user.id && (
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(comment.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#484f58', padding: '0 2px', lineHeight: 1 }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = '#f85149')}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = '#484f58')}
+                      title="Efase kòmantè"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="text-[13px] m-0 leading-snug" style={{ color: '#c9d1d9' }}>
-                {comment.text}
-              </p>
+              <p className="text-[13px] m-0 leading-snug" style={{ color: '#c9d1d9' }}>{comment.text}</p>
             </div>
           ))
         )}
@@ -598,12 +653,24 @@ interface BetPanelProps {
   sticky?: boolean;
 }
 
+const BONUS_MAX_ODDS = 3.0;
+
 function BetPanel({
   market, user, option, setOption, amount, setAmount,
   amtNum, yesOdds, noOdds, potential, isClosed,
   onBet, loginPath, fromPath, sticky,
 }: BetPanelProps) {
-  const minBet = market.min_bet || 50;
+  const minBet = market.min_bet || 25;
+
+  const realBalance  = user?.balance ?? 0;
+  const bonusBalance = user?.bonus_balance ?? 0;
+  // Bonus mode: real balance insufficient but bonus covers the amount
+  // Also activate when user has 0 real balance at all (even before typing amount)
+  const onlyHasBonus = user != null && realBalance < minBet && bonusBalance >= minBet;
+  const useBonus     = user != null && amtNum > 0 && realBalance < amtNum && bonusBalance >= amtNum;
+  const hasAnyFunds  = amtNum === 0 || realBalance >= amtNum || bonusBalance >= amtNum;
+  const curOdds      = option === 'yes' ? yesOdds : noOdds;
+  const bonusOddsViolation = useBonus && curOdds > BONUS_MAX_ODDS;
 
   const panelClasses = [
     'rounded-3xl',
@@ -620,14 +687,28 @@ function BetPanel({
         boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
       }}
     >
-      <div className="font-bold text-lg sm:text-xl mb-5 sm:mb-6 text-white tracking-tight">
-        {isClosed ? 'Machè Fèmen' : 'Fè Pari'}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <span className="font-bold text-lg sm:text-xl text-white tracking-tight">
+          {isClosed ? 'Machè Fèmen' : 'Fè Pari'}
+        </span>
+        {user && !isClosed && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+            <span style={{ fontSize: 11, color: '#3fb950', fontFamily: 'JetBrains Mono,monospace', fontWeight: 600 }}>
+              {Math.floor(realBalance).toLocaleString()} HTG
+            </span>
+            {bonusBalance > 0 && (
+              <span style={{ fontSize: 10, color: '#c084fc', fontFamily: 'JetBrains Mono,monospace', fontWeight: 600 }}>
+                +{Math.floor(bonusBalance)} Bonus
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {isClosed ? (
         <div className="text-center py-10 sm:py-12" style={{ color: '#8b949e' }}>
           {market.status === 'resolved'
-            ? `✓ Rezoud: ${market.resolution === 'yes' ? 'Wi' : 'Non'}`
+            ? `✓ Rezoud: ${market.resolution === 'yes' ? (market.option_a || 'Wi') : (market.option_b || 'Non')}`
             : 'Machè sa a fèmen pou pari nouvo'}
         </div>
       ) : (
@@ -655,7 +736,7 @@ function BetPanel({
                   }}
                 >
                   <span className="text-xl leading-none">{isYes ? '✓' : '✗'}</span>
-                  <span>{isYes ? 'Wi' : 'Non'}</span>
+                  <span>{isYes ? (market.option_a || 'Wi') : (market.option_b || 'Non')}</span>
                   <span className="text-[12px]" style={{ opacity: 0.85 }}>
                     {odds.toFixed(2)}×
                   </span>
@@ -709,7 +790,7 @@ function BetPanel({
               {user && (
                 <button
                   type="button"
-                  onClick={() => setAmount(String(Math.floor(user.balance)))}
+                  onClick={() => setAmount(String(realBalance > 0 ? realBalance : bonusBalance))}
                   className="px-3.5 sm:px-4 py-1.5 sm:py-2 text-[13px] sm:text-sm rounded-xl transition-colors"
                   style={{
                     background: 'rgba(63,185,80,0.1)',
@@ -746,22 +827,61 @@ function BetPanel({
             </div>
           )}
 
+          {/* Bonus available hint (when user has only bonus funds) */}
+          {user && onlyHasBonus && !useBonus && (
+            <div style={{
+              marginBottom: 12, padding: '10px 14px', borderRadius: 12,
+              background: 'rgba(168,85,247,0.08)', border: '1px solid rgba(168,85,247,0.2)',
+              display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#c084fc',
+            }}>
+              <span style={{ fontSize: 14 }}>💜</span>
+              <span>
+                Ou gen <strong style={{ fontFamily: 'JetBrains Mono,monospace' }}>{Math.floor(bonusBalance).toLocaleString()} HTG</strong> bonus.
+                Antre yon montan pou pari — sèlman sou koòf ≤ {BONUS_MAX_ODDS}×
+              </span>
+            </div>
+          )}
+
+          {/* Active bonus mode banner */}
+          {user && useBonus && !bonusOddsViolation && (
+            <div style={{
+              marginBottom: 12, padding: '10px 14px', borderRadius: 12,
+              background: 'rgba(168,85,247,0.12)', border: '1px solid rgba(168,85,247,0.3)',
+              display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#c084fc',
+            }}>
+              <span>Pari Bonus — {amtNum.toLocaleString()} HTG sou bonus ou. Koòf aktyèl: <strong>{curOdds.toFixed(2)}×</strong> ✓</span>
+            </div>
+          )}
+
+          {/* Bonus odds violation warning */}
+          {bonusOddsViolation && (
+            <div style={{
+              marginBottom: 12, padding: '12px 14px', borderRadius: 12,
+              background: 'rgba(248,81,73,0.1)', border: '1px solid rgba(248,81,73,0.3)',
+              fontSize: 12, color: '#f85149', lineHeight: 1.5,
+            }}>
+              <strong>Koòf twò wo pou bonus.</strong> Koòf aktyèl: <strong>{curOdds.toFixed(2)}×</strong> — maksimòm {BONUS_MAX_ODDS}×.<br/>
+              Chwazi lòt opsyon (Wi/Non) oswa yon mache avèk plis chans.
+            </div>
+          )}
+
           {/* CTA */}
           {user ? (
             <button
               type="button"
               onClick={onBet}
-              disabled={!amtNum || amtNum < minBet || amtNum > user.balance}
+              disabled={!amtNum || amtNum < minBet || !hasAnyFunds || bonusOddsViolation}
               className="md-bet-btn w-full rounded-2xl py-4 sm:py-5 font-bold text-base sm:text-lg disabled:opacity-50"
               style={{
-                background: '#3fb950',
+                background: useBonus ? '#a855f7' : '#3fb950',
                 color: 'white',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 4px 20px rgba(63,185,80,0.3)',
+                boxShadow: useBonus ? '0 4px 20px rgba(168,85,247,0.3)' : '0 4px 20px rgba(63,185,80,0.3)',
+                transition: 'background 0.2s',
               }}
             >
-              Pari {option === 'yes' ? 'Wi' : 'Non'} →
+              Pari {option === 'yes' ? (market.option_a || 'Wi') : (market.option_b || 'Non')} →
             </button>
           ) : (
             <Link
@@ -778,14 +898,6 @@ function BetPanel({
             </Link>
           )}
 
-          {user && (
-            <p className="text-center text-[12px] mt-3" style={{ color: '#484f58' }}>
-              Balans:{' '}
-              <span style={{ color: '#8b949e', fontFamily: 'JetBrains Mono, monospace' }}>
-                {user.balance.toLocaleString()} HTG
-              </span>
-            </p>
-          )}
         </>
       )}
     </div>
@@ -914,9 +1026,9 @@ export default function MarketDetail() {
   useInjectGlobalStyles();
 
   const { slug } = useParams<{ category: string; slug: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { path } = useLocale();
-  const { user, updateBalance } = useAuth();
+  const { user, updateBalance, updateUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -924,32 +1036,62 @@ export default function MarketDetail() {
   const [recentBets, setRecentBets] = useState<RecentBet[]>([]);
   const [betsLoading, setBetsLoading] = useState(true);
 
+  // Tab system — URL-driven: ?tab=grafik | paris | komente
+  type TabId = 'grafik' | 'paris' | 'komente';
+  const TABS: { id: TabId; label: string; count?: number }[] = [
+    { id: 'grafik',  label: 'Grafik pri' },
+    { id: 'paris',   label: 'Pari resan' },
+    { id: 'komente', label: 'Kòmantè' },
+  ];
+  const rawTab = searchParams.get('tab') as TabId | null;
+  const activeTab: TabId = TABS.some(t => t.id === rawTab) ? rawTab! : 'grafik';
+
+  function goTab(id: TabId) {
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', id);
+      return next;
+    }, { replace: true });
+  }
+
   const [option, setOption] = useState<'yes' | 'no'>(
     () => (searchParams.get('option') === 'no' ? 'no' : 'yes'),
   );
   const [amount, setAmount] = useState('');
   const [busy, setBusy] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  useEffect(() => { setImgError(false); }, [market?.image_url]);
 
-  /* Mock dernières paris (même comportement que l’original) */
+  // Load favorite status from backend when market loads
+  useEffect(() => {
+    if (!market?.id || !user) return;
+    marketsAPI.getFavoriteStatus(market.id)
+      .then((r) => setIsFavorite(r.data.favorited))
+      .catch(() => {});
+  }, [market?.id, user]);
+
+  /* Vrais paris depuis la DB */
   useEffect(() => {
     let cancelled = false;
     const fetchRecentBets = async () => {
       if (!market?.id) return;
       try {
         setBetsLoading(true);
-        const mock: RecentBet[] = [
-          { id: '1', author: 'Jean P.', amount: 500, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 120_000) },
-          { id: '2', author: 'Marie C.', amount: 1000, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 300_000) },
-          { id: '3', author: 'Pierre L.', amount: 250, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 600_000) },
-          { id: '4', author: 'Sophie M.', amount: 2000, option: 'no', odds: 2.10, createdAt: new Date(Date.now() - 900_000) },
-          { id: '5', author: 'Alex R.', amount: 750, option: 'yes', odds: 1.82, createdAt: new Date(Date.now() - 1_200_000) },
-        ];
-        if (!cancelled) setRecentBets(mock);
-      } catch (err) {
-        console.error('Erè chajman dènye paris:', err);
+        const res = await marketsAPI.getMarketBets(market.id, 20);
+        if (!cancelled) {
+          setRecentBets(res.data.map((b) => ({
+            id: b.id,
+            author: b.username,
+            amount: b.amount,
+            option: b.option as "yes" | "no",
+            odds: b.odds_at_bet,
+            createdAt: new Date(b.created_at),
+          })));
+        }
+      } catch {
+        if (!cancelled) setRecentBets([]);
       } finally {
         if (!cancelled) setBetsLoading(false);
       }
@@ -993,9 +1135,12 @@ export default function MarketDetail() {
     setBusy(true);
     try {
       const res = await marketsAPI.placeBet(market.id, option, amtNum);
-      const { new_balance, market: updated } = res.data;
+      const { new_balance, new_bonus_balance, market: updated } = res.data;
 
-      updateBalance(new_balance ?? (user.balance - amtNum));
+      updateUser({
+        balance:       new_balance       ?? user.balance,
+        bonus_balance: new_bonus_balance ?? user.bonus_balance,
+      });
       if (updated) setMarket(updated);
 
       const newBet: RecentBet = {
@@ -1009,18 +1154,13 @@ export default function MarketDetail() {
       setRecentBets((prev) => [newBet, ...prev].slice(0, 10));
 
       setAmount('');
-      setShowConfirm(false);
-      toast.success(
-        `✓ Pari ${option === 'yes' ? 'Wi' : 'Non'} — ${amtNum.toLocaleString()} HTG`,
-        { duration: 4000 },
-      );
+      showToast.bet(amtNum, option === 'yes' ? 'YES' : 'NO', potential);
     } catch (e: any) {
-      setShowConfirm(false);
-      toast.error(e.response?.data?.detail || 'Erè pari. Eseye ankò.');
+      showToast.error('Pari echwe', e.response?.data?.detail || 'Erè pari. Eseye ankò.');
     } finally {
       setBusy(false);
     }
-  }, [market, user, option, amtNum, updateBalance, setMarket, curOdds]);
+  }, [market, user, option, amtNum, updateUser, setMarket, curOdds]);
 
   const handleBetClick = useCallback(() => {
     if (!user) {
@@ -1028,25 +1168,48 @@ export default function MarketDetail() {
       return;
     }
     if (!market) return;
-    if (!amtNum || amtNum < (market.min_bet || 50)) {
-      toast.error(`Min: ${market.min_bet || 50} HTG`);
+    if (!amtNum || amtNum < (market.min_bet || 25)) {
+      showToast.warning('Montan twò piti', `Minimòm: ${market.min_bet || 25} HTG`);
       return;
     }
     if (amtNum > (market.max_bet || 100_000)) {
-      toast.error(`Max: ${market.max_bet} HTG`);
+      showToast.warning('Montan twò gran', `Maksimòm: ${(market.max_bet || 100_000).toLocaleString()} HTG`);
       return;
     }
-    if (amtNum > user.balance) {
-      toast.error('Balans ensifizan');
+    const realBal  = user.balance ?? 0;
+    const bonusBal = user.bonus_balance ?? 0;
+    const willUseBonus = realBal < amtNum && bonusBal >= amtNum;
+    if (realBal < amtNum && bonusBal < amtNum) {
+      showToast.error('Balans ensifizan', 'Balans reyèl ak bonus ou pa ase pou pari sa a');
       return;
     }
-    setShowConfirm(true);
-  }, [user, market, amtNum, navigate, path, location.pathname]);
+    if (willUseBonus) {
+      const curOdds = option === 'yes'
+        ? parseFloat((1 / Math.max(0.01, market.yes_prob)).toFixed(2))
+        : parseFloat((1 / Math.max(0.01, market.no_prob)).toFixed(2));
+      if (curOdds > BONUS_MAX_ODDS) {
+        showToast.warning('Koòf twò wo pou bonus', `Maks ${BONUS_MAX_ODDS}× ak bonus (aktyèl: ${curOdds.toFixed(2)}×)`);
+        return;
+      }
+    }
+    doPlaceBet();
+  }, [user, market, amtNum, option, navigate, path, location.pathname, doPlaceBet]);
 
-  const toggleFavorite = useCallback(() => {
-    setIsFavorite((prev) => !prev);
-    toast.success(isFavorite ? 'Retire nan favori' : 'Ajoute nan favori ❤️');
-  }, [isFavorite]);
+  const toggleFavorite = useCallback(async () => {
+    if (!market?.id || !user) {
+      showToast.info('Konekte dabò', 'Ou dwe konekte pou sove favori');
+      return;
+    }
+    const next = !isFavorite;
+    setIsFavorite(next);
+    try {
+      await marketsAPI.toggleFavorite(market.id);
+      showToast.success(next ? 'Ajoute nan favori' : 'Retire nan favori');
+    } catch {
+      setIsFavorite(!next);
+      showToast.error('Erè — eseye ankò');
+    }
+  }, [isFavorite, market?.id, user]);
 
   const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareText = market
@@ -1058,7 +1221,7 @@ export default function MarketDetail() {
     navigator.clipboard.writeText(shareUrl).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-      toast.success('Lyen kopye!');
+      showToast.success('Lyen kopye!');
     });
   }, [shareUrl]);
 
@@ -1128,19 +1291,6 @@ export default function MarketDetail() {
 
   return (
     <div className="container fade-in py-4 sm:py-6 md:py-10 px-3 sm:px-4 md:px-6">
-      {showConfirm && (
-        <BetConfirmModal
-          option={option}
-          amount={amtNum}
-          odds={curOdds}
-          potential={potential}
-          marketTitle={market.title}
-          onConfirm={doPlaceBet}
-          onCancel={() => setShowConfirm(false)}
-          busy={busy}
-        />
-      )}
-
       {/* Action bar glass */}
       <ActionBar
         isFavorite={isFavorite}
@@ -1153,13 +1303,14 @@ export default function MarketDetail() {
       />
 
       {/* Hero / Image */}
-      {market.image_url ? (
+      {market.image_url && !imgError ? (
         <div className="rounded-2xl overflow-hidden mb-5 sm:mb-6 aspect-[16/7] sm:aspect-[16/5] md:aspect-[16/4.5]">
           <img
             src={market.image_url}
             alt={market.title}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={() => setImgError(true)}
           />
         </div>
       ) : (
@@ -1188,7 +1339,7 @@ export default function MarketDetail() {
           </span>
           <span style={{ color: '#8b949e' }}>
             {market.status === 'resolved'
-              ? `Rezoud: ${market.resolution?.toUpperCase?.() || ''}`
+              ? `Rezoud: ${market.resolution === 'yes' ? (market.option_a || 'Wi') : (market.option_b || 'Non')}`
               : 'Machè sa a fèmen pou pari'}
           </span>
         </div>
@@ -1218,15 +1369,9 @@ export default function MarketDetail() {
             </h1>
           </div>
 
-          {/* Meta: countdown + volume */}
+          {/* Meta: countdown only */}
           <div className="flex flex-wrap gap-x-3 gap-y-2.5 text-sm items-center" style={{ color: '#8b949e' }}>
             <CountdownDisplay endDate={market.end_date} />
-            <div className="flex items-center gap-1.5">
-              <TrendingUp size={15} />
-              <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>
-                {market.total_volume.toLocaleString()} HTG
-              </span>
-            </div>
           </div>
 
           {market.description && (
@@ -1245,8 +1390,8 @@ export default function MarketDetail() {
             }}
           >
             <div className="flex justify-between mb-3 text-[15px] sm:text-base font-bold">
-              <span style={{ color: '#3fb950' }}>Wi {yp}%</span>
-              <span style={{ color: '#f85149' }}>Non {np}%</span>
+              <span style={{ color: '#3fb950' }}>{market.option_a || 'Wi'} {yp}%</span>
+              <span style={{ color: '#f85149' }}>{market.option_b || 'Non'} {np}%</span>
             </div>
             <div
               className="h-3 rounded-full overflow-hidden"
@@ -1277,9 +1422,61 @@ export default function MarketDetail() {
             </div>
           </div>
 
-          <PriceChart marketId={market.id} />
+          {/* ── Tabs navigation ─────────────────────────────────────── */}
+          <div style={{
+            display: 'flex', gap: 4, borderBottom: '1px solid rgba(255,255,255,0.08)',
+            paddingBottom: 0, marginBottom: -1,
+          }}>
+            {TABS.map(tab => {
+              const active = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => goTab(tab.id)}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: '10px 16px', fontSize: 13, fontWeight: active ? 600 : 400,
+                    color: active ? '#e6edf3' : '#8b949e',
+                    borderBottom: active ? '2px solid #1f6feb' : '2px solid transparent',
+                    marginBottom: -1, borderRadius: 0, transition: 'color .15s',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {tab.id === 'paris' && (
+                    <span style={{ marginRight: 6, opacity: 0.7 }}>⚡</span>
+                  )}
+                  {tab.id === 'grafik' && (
+                    <span style={{ marginRight: 6, opacity: 0.7 }}>📈</span>
+                  )}
+                  {tab.id === 'komente' && (
+                    <span style={{ marginRight: 6, opacity: 0.7 }}>💬</span>
+                  )}
+                  {tab.label}
+                  {tab.id === 'paris' && recentBets.length > 0 && (
+                    <span style={{
+                      marginLeft: 6, background: 'rgba(56,139,253,0.15)', color: '#58a6ff',
+                      borderRadius: 20, padding: '1px 7px', fontSize: 11, fontWeight: 600,
+                    }}>
+                      {recentBets.length}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
-          {/* BetPanel mobile (caché sur lg+) */}
+          {/* ── Tab panels ──────────────────────────────────────────── */}
+          {activeTab === 'grafik' && <PriceChart marketId={market.id} />}
+
+          {activeTab === 'paris' && (
+            <RecentBetsSection bets={recentBets} loading={betsLoading} market={market} />
+          )}
+
+          {activeTab === 'komente' && (
+            <CommentsSection marketId={market.id} user={user} />
+          )}
+
+          {/* BetPanel mobile (caché sur lg+) — toujours visible peu importe le tab */}
           <div className="lg:hidden">
             <BetPanel
               market={market}
@@ -1298,9 +1495,6 @@ export default function MarketDetail() {
               fromPath={location.pathname}
             />
           </div>
-
-          <RecentBetsSection bets={recentBets} loading={betsLoading} />
-          <CommentsSection marketId={market.id} user={user} />
         </div>
 
         {/* Colonne latérale — sticky desktop */}

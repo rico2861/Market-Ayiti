@@ -11,6 +11,7 @@ export interface User {
   role: UserRole;
   status: UserStatus;
   balance: number;
+  bonus_balance: number;
   is_email_verified: number;
   created_at: string;
 }
@@ -33,11 +34,14 @@ export interface Market {
   no_pool: number;
   yes_prob: number;
   no_prob: number;
-  total_volume: number;
+  total_volume?: number;
+  local_volume?: number;
   bet_count: number;
   resolution?: 'yes' | 'no' | null;
   resolution_source?: string;
   image_url?: string;
+  option_a?: string;
+  option_b?: string;
   created_at: string;
   updated_at: string;
 }

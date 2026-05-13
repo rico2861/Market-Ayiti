@@ -1,15 +1,18 @@
 FROM node:20-slim AS base
-WORKDIR /app
-RUN mkdir -p data logs
 
-COPY package.json ./
-RUN npm install --omit=dev --no-audit --no-fund
+# Build tools needed to compile better-sqlite3 native binding
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+RUN mkdir -p /data logs
+
+COPY package*.json ./
+RUN npm ci --omit=dev --no-audit --no-fund
 
 COPY src/ ./src/
-COPY prisma/ ./prisma/
-COPY .env.example ./.env.example
 
-RUN chown -R node:node /app
+RUN chown -R node:node /app /data
+
 USER node
 
 EXPOSE 4000

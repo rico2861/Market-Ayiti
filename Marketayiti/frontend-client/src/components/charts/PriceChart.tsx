@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip, ReferenceLine
 } from 'recharts';
@@ -17,7 +17,7 @@ const RANGES: Array<{ id: string; hours: number; labelKey: string }> = [
   { id: 'all', hours: 8760, labelKey: 'market.time_all' },
 ];
 
-export default function PriceChart({ marketId }: Props) {
+export default memo(function PriceChart({ marketId }: Props) {
   const { t } = useTranslation();
   const [range, setRange] = useState('1w');
   const [points, setPoints] = useState<any[]>([]);
@@ -110,4 +110,4 @@ export default function PriceChart({ marketId }: Props) {
       </div>
     </div>
   );
-}
+});

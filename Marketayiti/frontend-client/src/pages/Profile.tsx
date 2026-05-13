@@ -1,12 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLocale } from '../hooks/useLocale';
 import { authAPI } from '../api';
-import { User, Mail, Phone, Shield, Key, CheckCircle, AlertCircle, Save, Lock, Camera, Eye, EyeOff, Copy, Check } from 'lucide-react';
+import { User, Mail, Phone, Key, CheckCircle, AlertCircle, Save, Lock, Camera, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 type PwStep = 'idle' | 'request' | 'verify';
+
+function useVP() {
+  const [w, setW] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1280);
+  useEffect(() => {
+    const fn = () => setW(window.innerWidth);
+    window.addEventListener('resize', fn, { passive: true });
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return { isMobile: w < 640, isTablet: w >= 640 && w < 1024 };
+}
 
 const INPUT: React.CSSProperties = {
   width: '100%',
@@ -34,32 +44,30 @@ const LABEL: React.CSSProperties = {
 export default function Profile() {
   const { user, updateUser } = useAuth();
   const { path } = useLocale();
+  const { isMobile, isTablet } = useVP();
 
   const [phone, setPhone] = useState(user?.phone || '');
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [pwStep, setPwStep] = useState<PwStep>('idle');
-  const [identifier, setIdentifier] = useState(user?.email || user?.username || '');
   const [code, setCode] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [pwBusy, setPwBusy] = useState(false);
   const [pwError, setPwError] = useState('');
-  const [devCode, setDevCode] = useState('');
-  const [copiedCode, setCopiedCode] = useState(false);
 
   if (!user) {
     return (
       <div style={{ minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 16px' }}>
-        <p style={{ color: '#8b949e', marginBottom: 24, fontSize: 16 }}>Ou dwe konekte pou wè pwofil ou</p>
+        <p style={{ color: '#8b949e', marginBottom: 24, fontSize: 16 }}>Vous devez être connecté pour voir votre profil</p>
         <Link to={path('login')} style={{
           display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 28px',
           background: 'linear-gradient(135deg, #388bfd, #1f6feb)', color: 'white',
           borderRadius: 10, fontWeight: 600, textDecoration: 'none', transition: 'all 0.3s',
           boxShadow: '0 4px 20px rgba(56,139,253,0.3)'
         }}>
-          Konekte
+          Se connecter
         </Link>
       </div>
     );
@@ -70,46 +78,43 @@ export default function Profile() {
     try {
       const res = await authAPI.updateProfile({ phone: phone || null });
       updateUser({ phone: res.data.phone });
-      toast.success('✓ Pwofil aktyalize!');
+      toast.success('✓ Profil mis à jour !');
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || 'Erè. Eseye ankò.');
+      toast.error(e.response?.data?.detail || 'Erreur. Réessayez.');
     } finally {
       setSaving(false);
     }
   };
 
   const handleRequestCode = async () => {
-    if (!identifier) return setPwError('Antre imel, non itilizatè, oswa telefòn ou');
     setPwBusy(true);
     setPwError('');
     try {
-      const res = await authAPI.requestReset(identifier);
-      setDevCode(res.data._dev_code || '');
+      await authAPI.requestReset(user.email);
       setPwStep('verify');
-      toast.success('✓ Kòd jenere!');
+      toast.success('✓ Code envoyé !');
     } catch (e: any) {
-      setPwError(e.response?.data?.detail || 'Erè voye kòd');
+      setPwError(e.response?.data?.detail || 'Erreur lors de l\'envoi du code');
     } finally {
       setPwBusy(false);
     }
   };
 
   const handleVerifyAndChange = async () => {
-    if (code.length !== 6) return setPwError('Kòd dwe 6 chif');
-    if (!newPw || newPw.length < 8) return setPwError('Modpas dwe omwen 8 karaktè');
-    if (newPw !== confirmPw) return setPwError('Modpas yo pa matche');
+    if (code.length !== 6) return setPwError('Le code doit contenir 6 chiffres');
+    if (!newPw || newPw.length < 8) return setPwError('Le mot de passe doit contenir au moins 8 caractères');
+    if (newPw !== confirmPw) return setPwError('Les mots de passe ne correspondent pas');
     setPwBusy(true);
     setPwError('');
     try {
-      await authAPI.verifyReset(identifier, code, newPw);
-      toast.success('✓ Modpas chanje avèk siksè!', { duration: 4000 });
+      await authAPI.verifyReset(user.email, code, newPw);
+      toast.success('✓ Mot de passe modifié avec succès !', { duration: 4000 });
       setPwStep('idle');
       setCode('');
       setNewPw('');
       setConfirmPw('');
-      setDevCode('');
     } catch (e: any) {
-      setPwError(e.response?.data?.detail || 'Kòd envalid oswa ekspire');
+      setPwError(e.response?.data?.detail || 'Code invalide ou expiré');
     } finally {
       setPwBusy(false);
     }
@@ -117,7 +122,7 @@ export default function Profile() {
 
   const passwordStrength = newPw.length < 8 ? 0 : newPw.length < 12 ? 1 : 2;
   const strengthColor = passwordStrength === 0 ? '#f85149' : passwordStrength === 1 ? '#d29922' : '#3fb950';
-  const strengthLabel = passwordStrength === 0 ? 'Fèb' : passwordStrength === 1 ? 'Mwayen' : 'Fò';
+  const strengthLabel = passwordStrength === 0 ? 'Faible' : passwordStrength === 1 ? 'Moyen' : 'Fort';
 
   return (
     <div style={{
@@ -140,7 +145,7 @@ export default function Profile() {
         borderRadius: '50%',
         pointerEvents: 'none',
         transform: 'translate(150px, -150px)',
-        display: window.innerWidth < 640 ? 'none' : 'block'
+        display: isMobile ? 'none' : 'block'
       }} />
       <div style={{
         position: 'absolute',
@@ -153,29 +158,29 @@ export default function Profile() {
         borderRadius: '50%',
         pointerEvents: 'none',
         transform: 'translate(-100px, 100px)',
-        display: window.innerWidth < 640 ? 'none' : 'block'
+        display: isMobile ? 'none' : 'block'
       }} />
 
-      <div style={{ 
-        maxWidth: 900, 
-        margin: '0 auto', 
-        padding: '0 16px', 
-        position: 'relative', 
-        zIndex: 1 
+      <div style={{
+        maxWidth: 900,
+        margin: '0 auto',
+        padding: '0 16px',
+        position: 'relative',
+        zIndex: 1
       }}>
         {/* Header */}
         <div style={{ marginBottom: 28, animation: 'fadeInDown 0.6s ease-out' }}>
-          <h1 style={{ 
-            fontSize: window.innerWidth < 640 ? 24 : 32, 
-            fontWeight: 700, 
-            color: 'white', 
-            margin: '0 0 8px', 
-            letterSpacing: '-0.5px' 
+          <h1 style={{
+            fontSize: isMobile ? 24 : 32,
+            fontWeight: 700,
+            color: 'white',
+            margin: '0 0 8px',
+            letterSpacing: '-0.5px'
           }}>
-            Pwofil Mwen
+            Mon Profil
           </h1>
           <p style={{ fontSize: 14, color: '#8b949e', margin: 0 }}>
-            Jere kònt ak paramèt sekirite ou
+            Gérez votre compte et vos paramètres de sécurité
           </p>
         </div>
 
@@ -184,12 +189,12 @@ export default function Profile() {
           background: 'rgba(255,255,255,0.03)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 14,
-          padding: window.innerWidth < 640 ? 20 : 28,
+          padding: isMobile ? 20 : 28,
           marginBottom: 24,
           display: 'flex',
-          flexDirection: window.innerWidth < 640 ? 'column' : 'row',
-          gap: window.innerWidth < 640 ? 16 : 24,
-          alignItems: window.innerWidth < 640 ? 'stretch' : 'center',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 16 : 24,
+          alignItems: isMobile ? 'stretch' : 'center',
           animation: 'fadeInUp 0.6s ease-out 0.1s both',
           backdropFilter: 'blur(10px)'
         }}>
@@ -199,7 +204,7 @@ export default function Profile() {
             flexDirection: 'column',
             alignItems: 'center',
             gap: 12,
-            width: window.innerWidth < 640 ? '100%' : 'auto'
+            width: isMobile ? '100%' : 'auto'
           }}>
             <div style={{
               position: 'relative',
@@ -246,22 +251,22 @@ export default function Profile() {
           {/* User Info */}
           <div style={{
             flex: 1,
-            textAlign: window.innerWidth < 640 ? 'center' : 'left'
+            textAlign: isMobile ? 'center' : 'left'
           }}>
             <h2 style={{ fontSize: 20, fontWeight: 700, color: 'white', margin: '0 0 8px' }}>
               @{user.username}
             </h2>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 10, justifyContent: window.innerWidth < 640 ? 'center' : 'flex-start' }}>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 10, justifyContent: isMobile ? 'center' : 'flex-start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#8b949e' }}>
                 {user.role === 'admin' ? '👑' : '👤'}
-                <span>{user.role === 'admin' ? 'Administratè' : 'Manm'}</span>
+                <span>{user.role === 'admin' ? 'Administrateur' : 'Membre'}</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#8b949e' }}>
-                ✓ Verifye
+                ✓ Vérifié
               </div>
             </div>
             <p style={{ fontSize: 12, color: '#8b949e', margin: 0 }}>
-              Manm depi {new Date(user.created_at || '').toLocaleDateString('fr-HT', { month: 'long', year: 'numeric' })}
+              Membre depuis {new Date(user.created_at || '').toLocaleDateString('fr-HT', { month: 'long', year: 'numeric' })}
             </p>
           </div>
 
@@ -272,11 +277,11 @@ export default function Profile() {
             borderRadius: 12,
             padding: 16,
             textAlign: 'center',
-            minWidth: window.innerWidth < 640 ? '100%' : 180,
-            width: window.innerWidth < 640 ? '100%' : 'auto'
+            minWidth: isMobile ? '100%' : 180,
+            width: isMobile ? '100%' : 'auto'
           }}>
             <p style={{ fontSize: 11, color: '#8b949e', margin: '0 0 6px', fontWeight: 600, textTransform: 'uppercase' }}>
-              Balans
+              Solde
             </p>
             <p style={{ fontSize: 24, fontWeight: 700, color: '#3fb950', margin: 0, fontFamily: 'JetBrains Mono, monospace' }}>
               {user.balance.toLocaleString()}
@@ -288,8 +293,8 @@ export default function Profile() {
         {/* Two Column Layout - Responsive */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: window.innerWidth < 768 ? '1fr' : 'repeat(2, 1fr)',
-          gap: window.innerWidth < 768 ? 20 : 24
+          gridTemplateColumns: isMobile || isTablet ? '1fr' : 'repeat(2, 1fr)',
+          gap: isMobile ? 20 : 24
         }}>
           {/* Left Column - Account Info */}
           <div>
@@ -312,21 +317,20 @@ export default function Profile() {
                 gap: 8
               }}>
                 <Lock size={16} color="#388bfd" />
-                Enfòmasyon Sekirize
+                Informations sécurisées
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {[
-                  { icon: User, label: 'Non Itilizatè', value: user.username },
-                  { icon: Shield, label: 'Rôl', value: user.role },
-                  { icon: Mail, label: 'Imel', value: user.email }
+                  { icon: User, label: 'Nom d\'utilisateur', value: user.username },
+                  { icon: Mail, label: 'Adresse e-mail', value: user.email }
                 ].map((item, idx) => (
                   <div key={idx} style={{
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: 12,
                     paddingBottom: 14,
-                    borderBottom: idx < 2 ? '1px solid rgba(255,255,255,0.04)' : 'none'
+                    borderBottom: idx < 1 ? '1px solid rgba(255,255,255,0.04)' : 'none'
                   }}>
                     <div style={{ color: '#388bfd', flexShrink: 0, marginTop: 2 }}>
                       <item.icon size={16} />
@@ -338,24 +342,12 @@ export default function Profile() {
                       <p style={{ fontSize: 13, color: 'white', margin: 0, fontWeight: 500, wordBreak: 'break-word' }}>
                         {item.value}
                       </p>
+                      <p style={{ fontSize: 11, color: '#475569', margin: '4px 0 0', fontStyle: 'italic' }}>
+                        Non modifiable
+                      </p>
                     </div>
                   </div>
                 ))}
-              </div>
-
-              <div style={{
-                background: 'rgba(210,153,34,0.08)',
-                border: '1px solid rgba(210,153,34,0.2)',
-                borderRadius: 10,
-                padding: 12,
-                marginTop: 16,
-                display: 'flex',
-                gap: 8,
-                fontSize: 12,
-                color: '#d29922'
-              }}>
-                <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-                <span>Non itilizatè ak imel pa ka chanje pou sekirite.</span>
               </div>
             </div>
 
@@ -377,11 +369,11 @@ export default function Profile() {
                 gap: 8
               }}>
                 <Phone size={16} color="#388bfd" />
-                Nimewo Telefòn
+                Numéro de téléphone
               </div>
 
               <div style={{ marginBottom: 16 }}>
-                <label style={LABEL}>Nimewo MonCash / WhatsApp</label>
+                <label style={LABEL}>Numéro MonCash / WhatsApp</label>
                 <input
                   type="tel"
                   value={phone}
@@ -401,7 +393,7 @@ export default function Profile() {
                   }}
                 />
                 <p style={{ fontSize: 12, color: '#8b949e', margin: '8px 0 0' }}>
-                  Yo pral itilize nimewo sa a pou retrè MonCash.
+                  Ce numéro sera utilisé pour les retraits MonCash.
                 </p>
               </div>
 
@@ -439,7 +431,7 @@ export default function Profile() {
                 }}
               >
                 <Save size={16} />
-                {saving ? 'Ap sove...' : 'Sove Chanjman'}
+                {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
               </button>
             </div>
           </div>
@@ -462,7 +454,7 @@ export default function Profile() {
               gap: 8
             }}>
               <Key size={16} color="#d29922" />
-              Chanje Modpas
+              Modifier le mot de passe
             </div>
 
             {pwError && (
@@ -487,13 +479,12 @@ export default function Profile() {
             {pwStep === 'idle' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <p style={{ fontSize: 13, color: '#8b949e', margin: 0 }}>
-                  Sekirize kònt ou avèk yon modpas pi fò.
+                  Sécurisez votre compte avec un mot de passe plus fort.
                 </p>
                 <button
                   onClick={() => {
                     setPwStep('request');
                     setPwError('');
-                    setIdentifier(user?.email || user?.username || '');
                   }}
                   style={{
                     width: '100%',
@@ -521,118 +512,98 @@ export default function Profile() {
                   }}
                 >
                   <Key size={16} />
-                  Chanje Modpas
+                  Modifier le mot de passe
                 </button>
               </div>
             )}
 
             {pwStep === 'request' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideInDown 0.3s ease-out' }}>
-                <div style={{ background: 'rgba(56,139,253,0.05)', borderRadius: 10, padding: 12, border: '1px solid rgba(56,139,253,0.2)' }}>
-                  <p style={{ fontSize: 12, color: '#8b949e', margin: 0, fontWeight: 600 }}>
-                    📧 Yon kòd konfimmasyon ap voye nan : <span style={{ color: '#c9d1d9' }}>{identifier}</span>
+                <div style={{ background: 'rgba(56,139,253,0.05)', borderRadius: 10, padding: 16, border: '1px solid rgba(56,139,253,0.2)' }}>
+                  <p style={{ fontSize: 13, color: '#8b949e', margin: '0 0 8px', fontWeight: 600 }}>
+                    Un code de vérification sera envoyé à :
                   </p>
-                </div>
-                <div>
-                  <label style={LABEL}>Entwodiksyon</label>
-                  <input
-                    value={identifier}
-                    onChange={e => setIdentifier(e.target.value)}
-                    placeholder="imel, non, oswa telefòn"
-                    style={INPUT}
-                    onFocus={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(56,139,253,0.5)';
-                      e.currentTarget.style.background = 'rgba(0,0,0,0.3)';
-                    }}
-                    onBlur={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
-                      e.currentTarget.style.background = 'rgba(0,0,0,0.2)';
-                    }}
-                  />
+                  <p style={{ fontSize: 14, color: '#c9d1d9', margin: 0, fontWeight: 600 }}>
+                    📧 {user.email}
+                  </p>
                 </div>
                 <button
                   onClick={handleRequestCode}
-                  disabled={pwBusy || !identifier}
+                  disabled={pwBusy}
                   style={{
                     width: '100%',
                     padding: '12px 16px',
-                    background: pwBusy || !identifier ? 'rgba(56,139,253,0.1)' : 'linear-gradient(135deg, #388bfd, #1f6feb)',
+                    background: pwBusy ? 'rgba(56,139,253,0.1)' : 'linear-gradient(135deg, #388bfd, #1f6feb)',
                     border: 'none',
                     borderRadius: 10,
                     color: 'white',
                     fontSize: 14,
                     fontWeight: 600,
-                    cursor: pwBusy || !identifier ? 'not-allowed' : 'pointer',
+                    cursor: pwBusy ? 'not-allowed' : 'pointer',
                     transition: 'all 0.3s',
-                    opacity: pwBusy || !identifier ? 0.6 : 1,
+                    opacity: pwBusy ? 0.6 : 1,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 8
                   }}
                   onMouseEnter={(e) => {
-                    if (!pwBusy && identifier) {
+                    if (!pwBusy) {
                       e.currentTarget.style.transform = 'translateY(-2px)';
                       e.currentTarget.style.boxShadow = '0 8px 24px rgba(56,139,253,0.3)';
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!pwBusy && identifier) {
+                    if (!pwBusy) {
                       e.currentTarget.style.transform = 'translateY(0)';
                       e.currentTarget.style.boxShadow = 'none';
                     }
                   }}
                 >
-                  {pwBusy ? 'Ap genere...' : '→ Kontinye'}
+                  {pwBusy ? 'Envoi en cours...' : 'Envoyer le code'}
+                </button>
+                <button
+                  onClick={() => {
+                    setPwStep('idle');
+                    setPwError('');
+                    setNewPw('');
+                    setConfirmPw('');
+                    setShowPassword(false);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '11px 16px',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 10,
+                    color: '#8b949e',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.3s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                  }}
+                >
+                  ← Annuler
                 </button>
               </div>
             )}
 
             {pwStep === 'verify' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, animation: 'slideInDown 0.3s ease-out' }}>
-                {devCode && (
-                  <div style={{
-                    background: 'rgba(56,139,253,0.1)',
-                    border: '2px solid rgba(56,139,253,0.4)',
-                    borderRadius: 12,
-                    padding: 16,
-                    textAlign: 'center'
-                  }}>
-                    <p style={{ fontSize: 11, color: '#8b949e', margin: '0 0 10px', fontWeight: 600, textTransform: 'uppercase' }}>
-                      Kòd konfimmasyon (Dev Mode)
-                    </p>
-                    <div style={{
-                      fontSize: 32,
-                      fontWeight: 800,
-                      color: '#388bfd',
-                      fontFamily: 'JetBrains Mono, monospace',
-                      letterSpacing: '0.4em',
-                      cursor: 'pointer',
-                      padding: '12px',
-                      transition: 'all 0.3s',
-                      borderRadius: 8,
-                      background: 'rgba(56,139,253,0.05)',
-                      userSelect: 'none'
-                    }}
-                    onClick={() => {
-                      navigator.clipboard.writeText(devCode);
-                      setCopiedCode(true);
-                      setTimeout(() => setCopiedCode(false), 2000);
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(56,139,253,0.1)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(56,139,253,0.05)';
-                    }}>
-                      {devCode}
-                      {copiedCode && <span style={{ marginLeft: 8, color: '#3fb950' }}>✓</span>}
-                    </div>
-                  </div>
-                )}
+                <div style={{ background: 'rgba(56,139,253,0.05)', borderRadius: 10, padding: 12, border: '1px solid rgba(56,139,253,0.2)' }}>
+                  <p style={{ fontSize: 12, color: '#8b949e', margin: 0 }}>
+                    Code envoyé à <span style={{ color: '#c9d1d9', fontWeight: 600 }}>{user.email}</span>
+                  </p>
+                </div>
 
                 <div>
-                  <label style={LABEL}>Antre Kòd 6 Chif</label>
+                  <label style={LABEL}>Code de vérification à 6 chiffres</label>
                   <input
                     value={code}
                     onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
@@ -661,15 +632,20 @@ export default function Profile() {
 
                 <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 10, padding: 14, border: '1px solid rgba(255,255,255,0.04)' }}>
                   <p style={{ fontSize: 12, color: '#8b949e', margin: '0 0 12px', fontWeight: 600 }}>
-                    🔐 Nouvo Modpas
+                    Nouveau mot de passe
                   </p>
+                  {/* Hidden dummy inputs — trick browsers into targeting these instead of the real fields */}
+                  <input type="text" autoComplete="username" style={{ display: 'none' }} readOnly tabIndex={-1} aria-hidden />
+                  <input type="password" autoComplete="current-password" style={{ display: 'none' }} readOnly tabIndex={-1} aria-hidden />
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ position: 'relative', marginBottom: 10 }}>
                       <input
                         type={showPassword ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        name="new-password"
                         value={newPw}
                         onChange={e => setNewPw(e.target.value)}
-                        placeholder="Minimòm 8 karaktè"
+                        placeholder="Minimum 8 caractères"
                         style={{
                           ...INPUT,
                           paddingRight: 40
@@ -732,9 +708,11 @@ export default function Profile() {
                   <div>
                     <input
                       type="password"
+                      autoComplete="new-password"
+                      name="confirm-password"
                       value={confirmPw}
                       onChange={e => setConfirmPw(e.target.value)}
-                      placeholder="Repete modpas la"
+                      placeholder="Répétez le mot de passe"
                       style={{
                         ...INPUT,
                         borderColor: confirmPw ? (confirmPw === newPw ? 'rgba(63,185,80,0.5)' : '#f85149') : 'rgba(255,255,255,0.08)',
@@ -751,12 +729,12 @@ export default function Profile() {
                     />
                     {confirmPw && confirmPw === newPw && (
                       <div style={{ fontSize: 12, color: '#3fb950', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <CheckCircle size={14} /> Modpas kòrèk
+                        <CheckCircle size={14} /> Mot de passe correct
                       </div>
                     )}
                     {confirmPw && confirmPw !== newPw && (
                       <div style={{ fontSize: 12, color: '#f85149', marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <AlertCircle size={14} /> Modpas pa matche
+                        <AlertCircle size={14} /> Les mots de passe ne correspondent pas
                       </div>
                     )}
                   </div>
@@ -796,7 +774,7 @@ export default function Profile() {
                   }}
                 >
                   <CheckCircle size={16} />
-                  {pwBusy ? 'Ap verifye...' : '✓ Sove Modpas'}
+                  {pwBusy ? 'Vérification...' : '✓ Enregistrer le mot de passe'}
                 </button>
 
                 <button
@@ -806,6 +784,7 @@ export default function Profile() {
                     setNewPw('');
                     setConfirmPw('');
                     setPwError('');
+                    setShowPassword(false);
                   }}
                   style={{
                     width: '100%',
@@ -826,7 +805,7 @@ export default function Profile() {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
                   }}
                 >
-                  ← Anile
+                  ← Annuler
                 </button>
               </div>
             )}
@@ -875,10 +854,6 @@ export default function Profile() {
 
         button:focus {
           outline: none;
-        }
-
-        @media (max-width: 640px) {
-          /* Responsive adjustments already in inline styles */
         }
       `}</style>
     </div>
