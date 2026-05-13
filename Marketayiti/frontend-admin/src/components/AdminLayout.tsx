@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   TrendingUp, LayoutDashboard, BarChart2, Users, ArrowLeftRight,
   Tag, Settings, FileText, LogOut, Menu, X, Bell, ChevronRight,
-  AlertCircle, MessageSquare, Lock,
+  AlertCircle, MessageSquare, Lock, Shield,
 } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 import { adminAPI } from '../api';
@@ -13,6 +13,7 @@ const NAV = [
   { to: '/markets',      icon: BarChart2,        label: 'Marchés',        group: 'main' },
   { to: '/users',        icon: Users,            label: 'Utilisateurs',   group: 'main', badge: 'users' },
   { to: '/transactions', icon: ArrowLeftRight,   label: 'Transactions',   group: 'main', badge: 'pending' },
+  { to: '/fraud',        icon: Shield,           label: 'Fraude IA',      group: 'config' },
   { to: '/categories',   icon: Tag,              label: 'Catégories',     group: 'config' },
   { to: '/comments',     icon: MessageSquare,    label: 'Commentaires',   group: 'config' },
   { to: '/settings',     icon: Settings,         label: 'Paramètres',     group: 'config' },
@@ -28,6 +29,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/comments':     'Commentaires',
   '/settings':     'Paramètres',
   '/logs':         'Logs Système',
+  '/fraud':        'Fraude IA',
 };
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

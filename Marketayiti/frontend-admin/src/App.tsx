@@ -12,6 +12,7 @@ const AdminCategories   = lazy(() => import('./pages/AdminCategories'));
 const AdminSettings     = lazy(() => import('./pages/AdminSettings'));
 const AdminLogs         = lazy(() => import('./pages/AdminLogs'));
 const AdminComments     = lazy(() => import('./pages/AdminComments'));
+const AdminFraud        = lazy(() => import('./pages/AdminFraud'));
 
 function Loader() {
   return (
@@ -45,6 +46,7 @@ const PROTECTED = [
   { path: '/comments',      el: AdminComments },
   { path: '/settings',      el: AdminSettings },
   { path: '/logs',          el: AdminLogs },
+  { path: '/fraud',         el: AdminFraud },
 ];
 
 export default function App() {
